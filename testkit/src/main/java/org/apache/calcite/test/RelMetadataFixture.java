@@ -65,6 +65,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -261,6 +262,24 @@ public class RelMetadataFixture {
     Double result = mq.getPercentageOriginalRows(rel);
     assertNotNull(result);
     assertThat(result, matcher);
+    return this;
+  }
+
+  public RelMetadataFixture assertForeignKeys(
+      Matcher<ImmutableBitSet> constraintMatcher) {
+    RelNode rel = toRel();
+    RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
+    ImmutableBitSet foreignKeys = mq.getForeignKeys(rel, false);
+    assertFalse(foreignKeys.isEmpty());
+    assertThat(foreignKeys, constraintMatcher);
+    return this;
+  }
+
+  public RelMetadataFixture assertForeignKeysAreEmpty() {
+    RelNode rel = toRel();
+    RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
+    ImmutableBitSet foreignKeys = mq.getForeignKeys(rel, false);
+    assertTrue(foreignKeys.isEmpty());
     return this;
   }
 

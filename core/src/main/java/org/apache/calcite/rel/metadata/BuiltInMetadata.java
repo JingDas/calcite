@@ -105,6 +105,44 @@ public abstract class BuiltInMetadata {
     }
   }
 
+  /**
+   * Metadata about which columns have foreign keys.
+   */
+  public interface ForeignKeys extends Metadata {
+    MetadataDef<ForeignKeys> DEF =
+        MetadataDef.of(ForeignKeys.class, ForeignKeys.Handler.class,
+            BuiltInMethod.FOREIGN_KEYS.method);
+
+    /**
+     * Determines the list of foreign keys for this expression. Foreign keys are
+     * represented as an {@link org.apache.calcite.util.ImmutableBitSet}, where
+     * each bit position represents the column ordinal is foreign key.
+     *
+     * @param ignoreNulls if true, ignore null values when determining
+     *                    whether the keys are foreign keys
+     *
+     * @return set of foreign keys, or empty set if this information
+     * cannot be determined (whereas null indicates definitely
+     * no constraint at all)
+     */
+    ImmutableBitSet getForeignKeys(boolean ignoreNulls);
+
+    /**
+     * Handler API.
+     */
+    @FunctionalInterface
+    interface Handler extends MetadataHandler<ForeignKeys> {
+      ImmutableBitSet getForeignKeys(
+          RelNode rel,
+          RelMetadataQuery mq,
+          boolean ignoreNulls);
+
+      @Override default MetadataDef<ForeignKeys> getDef() {
+        return DEF;
+      }
+    }
+  }
+
   /** Metadata about whether a set of columns uniquely identifies a row. */
   public interface ColumnUniqueness extends Metadata {
     MetadataDef<ColumnUniqueness> DEF =
@@ -837,6 +875,6 @@ public abstract class BuiltInMetadata {
   interface All extends Selectivity, UniqueKeys, RowCount, DistinctRowCount,
       PercentageOriginalRows, ColumnUniqueness, ColumnOrigin, Predicates,
       Collation, Distribution, Size, Parallelism, Memory, AllPredicates,
-      ExpressionLineage, TableReferences, NodeTypes {
+      ExpressionLineage, TableReferences, NodeTypes, ForeignKeys {
   }
 }

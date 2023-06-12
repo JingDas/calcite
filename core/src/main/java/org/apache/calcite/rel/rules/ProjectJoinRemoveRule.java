@@ -20,27 +20,35 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelReferentialConstraint;
 import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.JoinInfo;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.rel.logical.LogicalProject;
+import org.apache.calcite.rel.metadata.RelColumnOrigin;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.tools.RelBuilderFactory;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.mapping.IntPair;
 
 import org.immutables.value.Value;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 /**
  * Planner rule that matches an {@link Project}
- * on a {@link Join} and removes the join provided that the join is a left join
- * or right join and the join keys are unique.
+ * on a {@link Join} and removes the join provided that the join is a left or
+ * right join and the join keys are unique, and removes the join provided that
+ * the join is inner join and the join keys are foreign and unique key,
+ * foreign key is not nullable.
  *
  * <p>For instance,
  *
@@ -78,40 +86,56 @@ public class ProjectJoinRemoveRule
     final Project project = call.rel(0);
     final Join join = call.rel(1);
     final boolean isLeftJoin = join.getJoinType() == JoinRelType.LEFT;
-    int lower = isLeftJoin
-        ? join.getLeft().getRowType().getFieldCount() : 0;
-    int upper = isLeftJoin
-        ? join.getRowType().getFieldCount()
-        : join.getLeft().getRowType().getFieldCount();
+    final boolean isRightJoin = join.getJoinType() == JoinRelType.RIGHT;
+    final boolean isInnerJoin = join.getJoinType() == JoinRelType.INNER;
 
-    // Check whether the project uses columns whose index is between
-    // lower(included) and upper(excluded).
-    for (RexNode expr: project.getProjects()) {
-      if (RelOptUtil.InputFinder.bits(expr).asList().stream().anyMatch(
-          i -> i >= lower && i < upper)) {
+    // Check project range
+    ImmutableBitSet projectBits = RelOptUtil.InputFinder.bits(project.getProjects(), null);
+    boolean onlyUseLeft = projectBits.asList().stream()
+        .allMatch(i -> i >= 0 && i < join.getLeft().getRowType().getFieldCount());
+    boolean onlyUseRight = projectBits.asList().stream()
+        .allMatch(i -> i >= join.getLeft().getRowType().getFieldCount()
+            && i < join.getRowType().getFieldCount());
+
+    if (!onlyUseLeft && !onlyUseRight) {
+      return;
+    }
+    if (isLeftJoin && !onlyUseLeft) {
+      return;
+    }
+    if (isRightJoin && !onlyUseRight) {
+      return;
+    }
+
+    JoinInfo joinInfo = join.analyzeCondition();
+    final List<Integer> leftKeys = joinInfo.leftKeys;
+    final List<Integer> rightKeys = joinInfo.rightKeys;
+    final RelMetadataQuery mq = call.getMetadataQuery();
+
+    // For inner join, should also check foreign keys additionally
+    if (JoinRelType.INNER == join.getJoinType()) {
+      final ImmutableBitSet leftForeignKeys = mq.getForeignKeys(join.getLeft(), false);
+      final ImmutableBitSet rightForeignKeys = mq.getForeignKeys(join.getRight(), false);
+      if (onlyUseLeft && !areForeignKeysValid(
+          leftKeys, rightKeys, leftForeignKeys, mq, join.getLeft(), join.getRight())) {
+        return;
+      }
+      if (onlyUseRight && !areForeignKeysValid(
+          rightKeys, leftKeys, rightForeignKeys, mq, join.getRight(), join.getLeft())) {
         return;
       }
     }
 
-    final List<Integer> leftKeys = new ArrayList<>();
-    final List<Integer> rightKeys = new ArrayList<>();
-    RelOptUtil.splitJoinCondition(join.getLeft(), join.getRight(),
-        join.getCondition(), leftKeys, rightKeys,
-        new ArrayList<>());
-
-    final List<Integer> joinKeys = isLeftJoin ? rightKeys : leftKeys;
-    final ImmutableBitSet.Builder columns = ImmutableBitSet.builder();
-    joinKeys.forEach(columns::set);
-
-    final RelMetadataQuery mq = call.getMetadataQuery();
+    BooleanSupplier isLeftSideReserved = () -> isLeftJoin || (isInnerJoin && onlyUseLeft);
+    final List<Integer> joinKeys = isLeftSideReserved.getAsBoolean() ? rightKeys : leftKeys;
     if (!Boolean.TRUE.equals(
-        mq.areColumnsUnique(isLeftJoin ? join.getRight() : join.getLeft(),
-        columns.build()))) {
+        mq.areColumnsUnique(isLeftSideReserved.getAsBoolean() ? join.getRight() : join.getLeft(),
+            ImmutableBitSet.of(joinKeys)))) {
       return;
     }
 
     RelNode node;
-    if (isLeftJoin) {
+    if (isLeftSideReserved.getAsBoolean()) {
       node = project
           .copy(project.getTraitSet(), join.getLeft(), project.getProjects(),
               project.getRowType());
@@ -125,6 +149,49 @@ public class ProjectJoinRemoveRule
               project.getRowType());
     }
     call.transformTo(node);
+  }
+
+  /**
+   * Check as following:
+   * 1. Make sure that every foreign column always be foreign key.
+   * 2. The target of foreign key is the correct unique key correspondingly.
+   */
+  private static boolean areForeignKeysValid(List<Integer> foreignColumns,
+      List<Integer> uniqueColumns,
+      ImmutableBitSet foreignKeys,
+      RelMetadataQuery mq,
+      RelNode foreignSideRel,
+      RelNode uniqueSideRel) {
+    if (foreignKeys.isEmpty()) {
+      return false;
+    }
+    if (!foreignKeys.contains(ImmutableBitSet.of(foreignColumns))) {
+      return false;
+    }
+    List<RelReferentialConstraint> referentialConstraints;
+    for (IntPair foreignUniqueKey : IntPair.zip(foreignColumns, uniqueColumns)) {
+      RelColumnOrigin foreignOrigin = mq.getColumnOrigin(foreignSideRel, foreignUniqueKey.source);
+      RelColumnOrigin uniqueOrigin = mq.getColumnOrigin(uniqueSideRel, foreignUniqueKey.target);
+      if (foreignOrigin == null || uniqueOrigin == null) {
+        return false;
+      }
+      referentialConstraints = foreignOrigin.getOriginTable().getReferentialConstraints();
+      if (referentialConstraints == null || referentialConstraints.isEmpty()) {
+        return false;
+      }
+
+      final Set<IntPair> constraintsSet = referentialConstraints.stream()
+          .map(RelReferentialConstraint::getColumnPairs)
+          .flatMap(Collection::stream)
+          .collect(Collectors.toSet());
+      if (!constraintsSet.contains(
+          IntPair.of(
+          foreignOrigin.getOriginColumnOrdinal(),
+          uniqueOrigin.getOriginColumnOrdinal()))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /** Rule configuration. */
@@ -144,7 +211,8 @@ public class ProjectJoinRemoveRule
           b0.operand(projectClass).oneInput(b1 ->
               b1.operand(joinClass).predicate(join ->
                   join.getJoinType() == JoinRelType.LEFT
-                      || join.getJoinType() == JoinRelType.RIGHT).anyInputs()))
+                      || join.getJoinType() == JoinRelType.RIGHT
+                      || join.getJoinType() == JoinRelType.INNER).anyInputs()))
           .as(Config.class);
     }
   }

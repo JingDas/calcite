@@ -107,6 +107,7 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
   private BuiltInMetadata.Size.Handler sizeHandler;
   private BuiltInMetadata.UniqueKeys.Handler uniqueKeysHandler;
   private BuiltInMetadata.LowerBoundCost.Handler lowerBoundCostHandler;
+  private BuiltInMetadata.ForeignKeys.Handler foreignKeysHandler;
 
   /**
    * Creates the instance with {@link JaninoRelMetadataProvider} instance
@@ -151,6 +152,7 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
     this.sizeHandler = provider.handler(BuiltInMetadata.Size.Handler.class);
     this.uniqueKeysHandler = provider.handler(BuiltInMetadata.UniqueKeys.Handler.class);
     this.lowerBoundCostHandler = provider.handler(BuiltInMetadata.LowerBoundCost.Handler.class);
+    this.foreignKeysHandler = provider.handler(BuiltInMetadata.ForeignKeys.Handler.class);
   }
 
   /** Creates and initializes the instance that will serve as a prototype for
@@ -183,6 +185,7 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
     this.sizeHandler = initialHandler(BuiltInMetadata.Size.Handler.class);
     this.uniqueKeysHandler = initialHandler(BuiltInMetadata.UniqueKeys.Handler.class);
     this.lowerBoundCostHandler = initialHandler(BuiltInMetadata.LowerBoundCost.Handler.class);
+    this.foreignKeysHandler = initialHandler(BuiltInMetadata.ForeignKeys.Handler.class);
   }
 
   private RelMetadataQuery(
@@ -213,6 +216,7 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
     this.sizeHandler = prototype.sizeHandler;
     this.uniqueKeysHandler = prototype.uniqueKeysHandler;
     this.lowerBoundCostHandler = prototype.lowerBoundCostHandler;
+    this.foreignKeysHandler = prototype.foreignKeysHandler;
   }
 
   //~ Methods ----------------------------------------------------------------
@@ -501,6 +505,29 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
         return uniqueKeysHandler.getUniqueKeys(rel, this, ignoreNulls);
       } catch (MetadataHandlerProvider.NoHandler e) {
         uniqueKeysHandler = revise(BuiltInMetadata.UniqueKeys.Handler.class);
+      }
+    }
+  }
+
+  /**
+   * Returns the
+   * {@link BuiltInMetadata.ForeignKeys#getForeignKeys(boolean)}
+   * statistic.
+   *
+   * @param rel         the relational expression
+   * @param ignoreNulls if true, ignore null values when determining
+   *                    whether the keys are foreign keys
+   *
+   * @return            set of keys, or empty set if this information cannot be determined
+   *                    (whereas empty set indicates definitely no keys at all)
+   */
+  public ImmutableBitSet getForeignKeys(RelNode rel, boolean ignoreNulls) {
+    for (;;) {
+      try {
+        return foreignKeysHandler.getForeignKeys(rel, this, ignoreNulls);
+      } catch (MetadataHandlerProvider.NoHandler e) {
+        foreignKeysHandler =
+            revise(BuiltInMetadata.ForeignKeys.Handler.class);
       }
     }
   }

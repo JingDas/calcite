@@ -274,6 +274,104 @@ public class RelMetadataTest {
   }
 
   // ----------------------------------------------------------------------
+  // Tests for getForeignKeys
+  // ----------------------------------------------------------------------
+
+  @Test void testForeignKeysAggregateCallEmpty() {
+    sql("select hiredate, sum(sal) from emp group by hiredate")
+        .assertForeignKeysAreEmpty();
+  }
+
+  @Test void testForeignKeysAggregateKeyEmpty() {
+    sql("select hiredate, sum(sal) from emp group by hiredate")
+        .assertForeignKeysAreEmpty();
+  }
+
+  @Test void testForeignKeysAggregateKey() {
+    sql("select count(sal), deptno from emp group by deptno")
+        .assertForeignKeys(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysTableOnly() {
+    sql("select deptno, ename from emp")
+        .assertForeignKeys(equalTo(bitSetOf(0)));
+  }
+
+  @Test void testForeignKeysTableOnlyEmpty() {
+    sql("select ename, job from emp")
+        .assertForeignKeysAreEmpty();
+  }
+
+  @Test void testForeignKeysExpressionEmpty() {
+    sql("select deptno + 1, ename from emp")
+        .assertForeignKeysAreEmpty();
+  }
+
+  @Test void testForeignKeysFilter() {
+    sql("select deptno, ename from emp where ename = 'lucy'")
+        .assertForeignKeys(equalTo(bitSetOf(0)));
+  }
+
+  @Test void testForeignKeysInnerJoinLeft() {
+    sql("select emp.deptno, dept.name, emp.deptno from emp, dept")
+        .assertForeignKeys(equalTo(bitSetOf(0, 2)));
+  }
+
+  @Test void testForeignKeysInnerJoinRight() {
+    sql("select dept.name, emp.deptno, emp.deptno from dept, emp")
+        .assertForeignKeys(equalTo(bitSetOf(1, 2)));
+  }
+
+  @Test void testForeignKeysJoinLeftOuter() {
+    sql("select name as dname, emp.deptno, dept.name from emp left outer join dept"
+        + " on emp.deptno = dept.deptno")
+        .assertForeignKeys(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysJoinRightOuter() {
+    sql("select name as dname, emp.deptno, dept.name, emp.deptno from dept right outer join emp"
+        + " on emp.deptno = dept.deptno")
+        .assertForeignKeys(equalTo(bitSetOf(1, 3)));
+  }
+
+  @Test void testForeignKeysJoinOuterEmpty() {
+    sql("select name as dname, emp.deptno, dept.name from dept left outer join emp"
+        + " on emp.deptno = dept.deptno")
+        .assertForeignKeysAreEmpty();
+  }
+
+  @Test void testForeignKeysJoinFullOuterEmpty() {
+    sql("select name as dname, emp.deptno from emp full outer join dept"
+        + " on emp.deptno = dept.deptno")
+        .assertForeignKeysAreEmpty();
+  }
+
+  @Test void testForeignKeysJoinAggregateFilter() {
+    sql("select dept.name, emp_agg.deptno, emp_agg.ename "
+        + "from dept "
+        + "right join "
+        + "(select count(sal), deptno, ename from emp group by deptno, ename) emp_agg "
+        + "on dept.deptno = emp_agg.deptno "
+        + "where emp_agg.ename = 'job'")
+        .assertForeignKeys(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysValuesEmpty() {
+    sql("values(1,2,3)")
+        .assertForeignKeysAreEmpty();
+  }
+
+  @Test void testForeignKeysUnion() {
+    sql("select name, deptno from dept union all select ename, deptno from emp")
+        .assertForeignKeysAreEmpty();
+  }
+
+  @Test void testForeignKeysSelfUnion() {
+    sql("select ename, deptno from emp union all select ename, deptno from emp")
+        .assertForeignKeys(equalTo(bitSetOf(1)));
+  }
+
+  // ----------------------------------------------------------------------
   // Tests for getColumnOrigins
   // ----------------------------------------------------------------------
 
