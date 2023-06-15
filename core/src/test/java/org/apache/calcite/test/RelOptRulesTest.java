@@ -6090,7 +6090,7 @@ class RelOptRulesTest extends RelOptTestBase {
    * <a href="https://issues.apache.org/jira/browse/CALCITE-5756">[CALCITE-5756]
    * Expand ProjectJoinRemoveRule to support inner join remove</a>.
    * Similar to {@link #testProjectJoinRemove15()};
-   * Should not remove the left join, even the join key of the left input is
+   * Should not remove the left join, even if the join key of the left input is
    * unique and the join key of the right input is foreign key, but foreign key is nullable. */
   @Test void testProjectJoinRemove16() {
     final String sql = "SELECT e.slacker\n"
