@@ -152,7 +152,7 @@ public class ProjectJoinRemoveRule
 
   /**
    * Check as following:
-   * 1. Make sure that every foreign column always be foreign key.
+   * 1. Make sure that every foreign column is always a foreign key.
    * 2. The target of foreign key is the correct unique key correspondingly.
    */
   private static boolean areForeignKeysValid(List<Integer> foreignColumns,
