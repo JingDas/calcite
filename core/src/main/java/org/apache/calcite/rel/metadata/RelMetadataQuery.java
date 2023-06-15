@@ -526,8 +526,7 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
       try {
         return foreignKeysHandler.getForeignKeys(rel, this, ignoreNulls);
       } catch (MetadataHandlerProvider.NoHandler e) {
-        foreignKeysHandler =
-            revise(BuiltInMetadata.ForeignKeys.Handler.class);
+        foreignKeysHandler = revise(BuiltInMetadata.ForeignKeys.Handler.class);
       }
     }
   }
