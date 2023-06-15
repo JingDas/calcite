@@ -322,7 +322,7 @@ public class RelMetadataTest {
         .assertForeignKeys(equalTo(bitSetOf(1, 2)));
   }
 
-  @Test void testForeignKeysJoinLeftOuter() {
+  @Test void testForeignKeysLeftOuterJoin() {
     sql("select name as dname, emp.deptno, dept.name from emp left outer join dept"
         + " on emp.deptno = dept.deptno")
         .assertForeignKeys(equalTo(bitSetOf(1)));
