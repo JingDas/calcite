@@ -128,7 +128,7 @@ public class ProjectJoinRemoveRule
 
     BooleanSupplier isLeftSideReserved = () -> isLeftJoin || (isInnerJoin && onlyUseLeft);
     final List<Integer> joinKeys = isLeftSideReserved.getAsBoolean() ? rightKeys : leftKeys;
-    if (!Boolean.TRUE.equals(
+    if (Boolean.FALSE.equals(
         mq.areColumnsUnique(isLeftSideReserved.getAsBoolean() ? join.getRight() : join.getLeft(),
             ImmutableBitSet.of(joinKeys)))) {
       return;
