@@ -136,9 +136,8 @@ public class ProjectJoinRemoveRule
 
     RelNode node;
     if (isLeftSideReserved.getAsBoolean()) {
-      node = project
-          .copy(project.getTraitSet(), join.getLeft(), project.getProjects(),
-              project.getRowType());
+      node = project.copy(project.getTraitSet(), join.getLeft(), project.getProjects(), 
+          project.getRowType());
     } else {
       final int offset = join.getLeft().getRowType().getFieldCount();
       final List<RexNode> newExprs = project.getProjects().stream()
