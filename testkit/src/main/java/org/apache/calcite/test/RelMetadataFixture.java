@@ -265,8 +265,7 @@ public class RelMetadataFixture {
     return this;
   }
 
-  public RelMetadataFixture assertForeignKeys(
-      Matcher<ImmutableBitSet> constraintMatcher) {
+  public RelMetadataFixture assertForeignKeys(Matcher<ImmutableBitSet> constraintMatcher) {
     RelNode rel = toRel();
     RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
     ImmutableBitSet foreignKeys = mq.getForeignKeys(rel, false);
