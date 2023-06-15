@@ -188,7 +188,7 @@ public class RelMdForeignKeys
 
     final List<RelReferentialConstraint> referentialConstraints =
         table.getReferentialConstraints();
-    if (referentialConstraints == null || referentialConstraints.size() == 0) {
+    if (referentialConstraints == null || referentialConstraints.isEmpty()) {
       return EMPTY_BIT_SET;
     }
     final List<IntPair> foreignUniquePair = referentialConstraints.stream()
