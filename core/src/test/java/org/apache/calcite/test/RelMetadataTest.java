@@ -340,7 +340,7 @@ public class RelMetadataTest {
         .assertForeignKeysAreEmpty();
   }
 
-  @Test void testForeignKeysJoinFullOuterEmpty() {
+  @Test void testForeignKeysFullOuterJoinEmpty() {
     sql("select name as dname, emp.deptno from emp full outer join dept"
         + " on emp.deptno = dept.deptno")
         .assertForeignKeysAreEmpty();
