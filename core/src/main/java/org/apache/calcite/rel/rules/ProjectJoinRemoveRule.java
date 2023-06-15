@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  * on a {@link Join} and removes the join provided that the join is a left or
  * right join and the join keys are unique, and removes the join provided that
  * the join is inner join and the join keys are foreign and unique key,
- * foreign key is not nullable.
+ * and the foreign key is not nullable.
  *
  * <p>For instance,
  *
