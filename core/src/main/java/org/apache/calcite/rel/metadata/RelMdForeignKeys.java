@@ -174,7 +174,7 @@ public class RelMdForeignKeys
         allOutColumns = allOutColumns.union(outColumns);
       }
     }
-    return allOutColumns.isEmpty() ? EMPTY_BIT_SET : allOutColumns;
+    return allOutColumns;
   }
 
   public ImmutableBitSet getForeignKeys(TableScan rel, RelMetadataQuery mq,
