@@ -156,11 +156,8 @@ public class ProjectJoinRemoveRule
    * 2. The target of foreign key is the correct unique key correspondingly.
    */
   private static boolean areForeignKeysValid(List<Integer> foreignColumns,
-      List<Integer> uniqueColumns,
-      ImmutableBitSet foreignKeys,
-      RelMetadataQuery mq,
-      RelNode foreignSideRel,
-      RelNode uniqueSideRel) {
+      List<Integer> uniqueColumns, ImmutableBitSet foreignKeys, RelMetadataQuery mq,
+      RelNode foreignSideRel, RelNode uniqueSideRel) {
     if (foreignKeys.isEmpty()) {
       return false;
     }
