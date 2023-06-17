@@ -510,21 +510,22 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
   }
 
   /**
-   * Returns the
-   * {@link BuiltInMetadata.ForeignKeys#getForeignKeys(boolean)}
-   * statistic.
+   * Extract foreign keys from relNode. Foreign keys are represented as an
+   * {@link org.apache.calcite.util.ImmutableBitSet}, where each bit position
+   * represents a 0-based output column ordinal.
    *
    * @param rel         the relational expression
-   * @param ignoreNulls if true, ignore null values when determining
-   *                    whether the keys are foreign keys
+   * @param containNulls if true, allow containing null values when determining
+   *                     whether the keys are foreign keys
    *
-   * @return            set of keys, or empty set if this information cannot be determined
-   *                    (whereas empty set indicates definitely no keys at all)
+   * @return bit set of foreign keys, or empty if not enough information is
+   * available to make that determination (whereas empty indicates definitely
+   * no foreign keys at all)
    */
-  public ImmutableBitSet getForeignKeys(RelNode rel, boolean ignoreNulls) {
+  public ImmutableBitSet getForeignKeys(RelNode rel, boolean containNulls) {
     for (;;) {
       try {
-        return foreignKeysHandler.getForeignKeys(rel, this, ignoreNulls);
+        return foreignKeysHandler.getForeignKeys(rel, this, containNulls);
       } catch (MetadataHandlerProvider.NoHandler e) {
         foreignKeysHandler = revise(BuiltInMetadata.ForeignKeys.Handler.class);
       }

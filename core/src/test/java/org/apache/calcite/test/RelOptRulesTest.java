@@ -6100,6 +6100,42 @@ class RelOptRulesTest extends RelOptTestBase {
         .checkUnchanged();
   }
 
+  /** Test case for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-5756">[CALCITE-5756]
+   * Expand ProjectJoinRemoveRule to support inner join remove</a>.
+   * Should remove the left join, since the join key of the left input is
+   * unique and the join key of the right input is foreign key, only use the right. */
+  @Test void testProjectJoinRemove17() {
+    final String sql = "SELECT e.deptno, e.ename "
+        + "FROM sales.dept d "
+        + "INNER JOIN "
+        + "(SELECT ename, deptno, count(job) FROM sales.emp WHERE ename IN ('lucy', 'lily') GROUP BY ename, deptno) e "
+        + "ON d.deptno = e.deptno "
+        + "WHERE e.deptno = 'd001'";
+    sql(sql)
+        .withPreRule(CoreRules.FILTER_INTO_JOIN)
+        .withRule(CoreRules.PROJECT_JOIN_REMOVE)
+        .check();
+  }
+
+  /** Test case for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-5756">[CALCITE-5756]
+   * Expand ProjectJoinRemoveRule to support inner join remove</a>.
+   * Should remove the right join, since the join key of the right input is
+   * unique and the join key of the left input is foreign key, only use the left. */
+  @Test void testProjectJoinRemove18() {
+    final String sql = "SELECT e.deptno, e.ename "
+        + "FROM (SELECT ename, deptno, count(job) FROM sales.emp WHERE ename IN ('lucy', 'lily') GROUP BY ename, deptno) e "
+        + "INNER JOIN "
+        + "(SELECT deptno, name FROM sales.dept WHERE deptno NOT IN (10003)) d "
+        + "ON d.deptno = e.deptno "
+        + "WHERE d.deptno IN (10001, 10002) and e.ename IN ('transportation', 'architecture')";
+    sql(sql)
+        .withPreRule(CoreRules.FILTER_INTO_JOIN)
+        .withRule(CoreRules.PROJECT_JOIN_REMOVE)
+        .check();
+  }
+
   @Test void testSwapOuterJoin() {
     final HepProgram program = new HepProgramBuilder()
         .addMatchLimit(1)

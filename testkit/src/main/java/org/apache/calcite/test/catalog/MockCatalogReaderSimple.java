@@ -89,6 +89,9 @@ public class MockCatalogReaderSimple extends MockCatalogReader {
     empTable.addColumn("COMM", fixture.intType);
     empTable.addColumn("DEPTNO", fixture.intType);
     empTable.addColumn("SLACKER", fixture.booleanType);
+    // Mock the referentialConstraint,
+    // the foreign key is the DEPTNO column of CATALOG.SALES.EMP table,
+    // reference the DEPTNO unique column of CATALOG.SALES.DEPT table.
     empTable.setReferentialConstraints(
         Lists.newArrayList(
             RelReferentialConstraintImpl.of(
@@ -108,6 +111,9 @@ public class MockCatalogReaderSimple extends MockCatalogReader {
     empNullablesTable.addColumn("COMM", fixture.intTypeNull);
     empNullablesTable.addColumn("DEPTNO", fixture.intTypeNull);
     empNullablesTable.addColumn("SLACKER", fixture.booleanTypeNull);
+    // Mock the referentialConstraint,
+    // the foreign key is the DEPTNO column of CATALOG.SALES.EMPNULLABLES table,
+    // reference the DEPTNO unique column of CATALOG.SALES.DEPT table.
     empNullablesTable.setReferentialConstraints(
         Lists.newArrayList(
             RelReferentialConstraintImpl.of(

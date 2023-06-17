@@ -24,19 +24,20 @@ import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.Correlate;
 import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.core.Intersect;
 import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.Minus;
 import org.apache.calcite.rel.core.Project;
-import org.apache.calcite.rel.core.SetOp;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.core.Union;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Util;
-import org.apache.calcite.util.mapping.IntPair;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Maps;
@@ -44,12 +45,13 @@ import com.google.common.collect.Maps;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * RelMdReferentialConstraits supplies a default implementation of
+ * RelMdForeignKeys supplies a default implementation of
  * {@link RelMetadataQuery#getForeignKeys} for the standard logical algebra.
- * The relNodes supported are the same to {@link RelMetadataQuery#getUniqueKeys(RelNode)}
+ * The relNodes supported are same to {@link RelMetadataQuery#getUniqueKeys(RelNode)}
  */
 public class RelMdForeignKeys
     implements MetadataHandler<BuiltInMetadata.ForeignKeys> {
@@ -68,42 +70,42 @@ public class RelMdForeignKeys
     return BuiltInMetadata.ForeignKeys.DEF;
   }
 
-  public ImmutableBitSet getForeignKeys(Filter rel, RelMetadataQuery mq, boolean ignoreNulls) {
-    return mq.getForeignKeys(rel.getInput(), ignoreNulls);
+  public ImmutableBitSet getForeignKeys(Filter rel, RelMetadataQuery mq, boolean containNulls) {
+    return mq.getForeignKeys(rel.getInput(), containNulls);
   }
 
-  public ImmutableBitSet getForeignKeys(Sort rel, RelMetadataQuery mq, boolean ignoreNulls) {
-    return mq.getForeignKeys(rel.getInput(), ignoreNulls);
+  public ImmutableBitSet getForeignKeys(Sort rel, RelMetadataQuery mq, boolean containNulls) {
+    return mq.getForeignKeys(rel.getInput(), containNulls);
   }
 
   public ImmutableBitSet getForeignKeys(Correlate rel, RelMetadataQuery mq,
-      boolean ignoreNulls) {
-    return mq.getForeignKeys(rel.getLeft(), ignoreNulls);
+      boolean containNulls) {
+    return mq.getForeignKeys(rel.getLeft(), containNulls);
   }
 
   public ImmutableBitSet getForeignKeys(TableModify rel, RelMetadataQuery mq,
-      boolean ignoreNulls) {
-    return mq.getForeignKeys(rel.getInput(), ignoreNulls);
+      boolean containNulls) {
+    return mq.getForeignKeys(rel.getInput(), containNulls);
   }
 
-  public ImmutableBitSet getForeignKeys(Join rel, RelMetadataQuery mq, boolean ignoreNulls) {
+  public ImmutableBitSet getForeignKeys(Join rel, RelMetadataQuery mq, boolean containNulls) {
     final RelNode left = rel.getLeft();
     final RelNode right = rel.getRight();
     if (!rel.getJoinType().projectsRight()) {
-      // only return the foreign keys from the LHS since a semijoin only
+      // only return the foreign keys from the LHS since a semi or anti join only
       // returns the LHS
-      return mq.getForeignKeys(left, ignoreNulls);
+      return mq.getForeignKeys(left, containNulls);
     }
 
     int nLeftColumns = rel.getLeft().getRowType().getFieldList().size();
     ImmutableBitSet outForeignKeys = ImmutableBitSet.of();
 
-    if (!rel.getJoinType().generatesNullsOnLeft() || ignoreNulls) {
-      ImmutableBitSet leftInputForeignKeys = mq.getForeignKeys(left, ignoreNulls);
+    if (!rel.getJoinType().generatesNullsOnLeft() || containNulls) {
+      ImmutableBitSet leftInputForeignKeys = mq.getForeignKeys(left, containNulls);
       outForeignKeys = outForeignKeys.union(leftInputForeignKeys);
     }
-    if (!rel.getJoinType().generatesNullsOnRight() || ignoreNulls) {
-      ImmutableBitSet rightInputForeignKeys = mq.getForeignKeys(right, ignoreNulls);
+    if (!rel.getJoinType().generatesNullsOnRight() || containNulls) {
+      ImmutableBitSet rightInputForeignKeys = mq.getForeignKeys(right, containNulls);
       ImmutableBitSet.Builder rightOutForeignKeys = ImmutableBitSet.builder();
       for (int index : rightInputForeignKeys.asList()) {
         rightOutForeignKeys.set(index + nLeftColumns);
@@ -114,12 +116,12 @@ public class RelMdForeignKeys
   }
 
   public ImmutableBitSet getForeignKeys(Aggregate rel, RelMetadataQuery mq,
-      boolean ignoreNulls) {
+      boolean containNulls) {
     final ImmutableBitSet groupSet = rel.getGroupSet();
     if (groupSet.isEmpty()) {
       return EMPTY_BIT_SET;
     }
-    final ImmutableBitSet inputForeignKeys = mq.getForeignKeys(rel.getInput(), ignoreNulls);
+    final ImmutableBitSet inputForeignKeys = mq.getForeignKeys(rel.getInput(), containNulls);
     if (inputForeignKeys.isEmpty()) {
       return EMPTY_BIT_SET;
     }
@@ -127,19 +129,19 @@ public class RelMdForeignKeys
   }
 
   public ImmutableBitSet getForeignKeys(Project rel, RelMetadataQuery mq,
-      boolean ignoreNulls) {
-    return getProjectForeignKeys(rel, mq, ignoreNulls, rel.getProjects());
+      boolean containNulls) {
+    return getProjectForeignKeys(rel, mq, containNulls, rel.getProjects());
   }
 
   public ImmutableBitSet getForeignKeys(Calc rel, RelMetadataQuery mq,
-      boolean ignoreNulls) {
+      boolean containNulls) {
     RexProgram program = rel.getProgram();
-    return getProjectForeignKeys(rel, mq, ignoreNulls,
+    return getProjectForeignKeys(rel, mq, containNulls,
         Util.transform(program.getProjectList(), program::expandLocalRef));
   }
 
   private static ImmutableBitSet getProjectForeignKeys(SingleRel rel, RelMetadataQuery mq,
-      boolean ignoreNulls,
+      boolean containNulls,
       List<RexNode> projExprs) {
 
     // Single input can be mapped to multiple outputs
@@ -162,7 +164,7 @@ public class RelMdForeignKeys
     final Map<Integer, ImmutableBitSet> mapInToOutPos =
         Maps.transformValues(inToOutIndexBuilder.build().asMap(), ImmutableBitSet::of);
     final ImmutableBitSet inputForeignKeys =
-        mq.getForeignKeys(rel.getInput(), ignoreNulls);
+        mq.getForeignKeys(rel.getInput(), containNulls);
     if (inputForeignKeys.isEmpty()) {
       return EMPTY_BIT_SET;
     }
@@ -178,12 +180,12 @@ public class RelMdForeignKeys
   }
 
   public ImmutableBitSet getForeignKeys(TableScan rel, RelMetadataQuery mq,
-      boolean ignoreNulls) {
+      boolean containNulls) {
     final RelOptTable table = rel.getTable();
     final BuiltInMetadata.ForeignKeys.Handler handler =
         table.unwrap(BuiltInMetadata.ForeignKeys.Handler.class);
     if (handler != null) {
-      return handler.getForeignKeys(rel, mq, ignoreNulls);
+      return handler.getForeignKeys(rel, mq, containNulls);
     }
 
     final List<RelReferentialConstraint> referentialConstraints =
@@ -191,55 +193,71 @@ public class RelMdForeignKeys
     if (referentialConstraints == null || referentialConstraints.isEmpty()) {
       return EMPTY_BIT_SET;
     }
-    final List<IntPair> foreignUniquePair = referentialConstraints.stream()
+    Set<Integer> foreignKeys = referentialConstraints.stream()
         .map(RelReferentialConstraint::getColumnPairs)
         .flatMap(Collection::stream)
-        .collect(Collectors.toList());
+        .map(pair -> {
+          return pair.source;
+        })
+        .collect(Collectors.toSet());
 
-    List<Integer> foreignKeys = IntPair.left(foreignUniquePair);
-    if (!ignoreNulls) {
+    if (!containNulls) {
       final List<RelDataTypeField> fieldList = rel.getRowType().getFieldList();
       foreignKeys = foreignKeys.stream()
           .filter(index -> !fieldList.get(index).getType().isNullable())
-          .collect(Collectors.toList());
+          .collect(Collectors.toSet());
     }
-    return foreignKeys.isEmpty() ? EMPTY_BIT_SET : ImmutableBitSet.of(foreignKeys);
+    return ImmutableBitSet.of(foreignKeys);
   }
 
-  public ImmutableBitSet getForeignKeys(SetOp rel, RelMetadataQuery mq,
-      boolean ignoreNulls) {
+  /**
+   * The foreign keys of Union are precisely the intersection of its every
+   * input foreign keys.
+   */
+  public ImmutableBitSet getForeignKeys(Union rel, RelMetadataQuery mq,
+      boolean containNulls) {
 
     ImmutableBitSet foreignKeys = ImmutableBitSet.of();
     for (RelNode input : rel.getInputs()) {
-      ImmutableBitSet inputForeignKeys = mq.getForeignKeys(input, ignoreNulls);
+      ImmutableBitSet inputForeignKeys = mq.getForeignKeys(input, containNulls);
       if (inputForeignKeys.isEmpty()) {
         return EMPTY_BIT_SET;
       }
       foreignKeys = foreignKeys.isEmpty()
           ? inputForeignKeys : foreignKeys.intersect(inputForeignKeys);
     }
-    if (foreignKeys.isEmpty()) {
-      return EMPTY_BIT_SET;
+    return foreignKeys;
+  }
+
+  /**
+   * The foreign keys of Intersect are precisely the union set of its every
+   * input foreign keys.
+   */
+  public ImmutableBitSet getForeignKeys(Intersect rel, RelMetadataQuery mq,
+      boolean containNulls) {
+
+    ImmutableBitSet foreignKeys = ImmutableBitSet.of();
+    for (RelNode input : rel.getInputs()) {
+      ImmutableBitSet inputForeignKeys = mq.getForeignKeys(input, containNulls);
+      if (inputForeignKeys.isEmpty()) {
+        continue;
+      }
+      foreignKeys = foreignKeys.union(inputForeignKeys);
     }
     return foreignKeys;
   }
 
   /**
-   * Catch-all implementation for
-   * {@link BuiltInMetadata.ForeignKeys#getForeignKeys(boolean)},
-   * invoked using reflection, for any relational expression not
-   * handled by a more specific method.
-   *
-   * @param rel         Relational expression
-   * @param mq          Metadata query
-   * @param ignoreNulls if true, ignore null values when determining
-   *                    whether the keys are foreign keys
-   * @return set of foreign keys, or empty set if not enough information
-   * is available to make that determination
-   * @see org.apache.calcite.rel.metadata.RelMetadataQuery#getForeignKeys(RelNode, boolean)
+   * The foreign keys of Minus are precisely the foreign keys of its first input.
    */
+  public ImmutableBitSet getForeignKeys(Minus rel, RelMetadataQuery mq,
+      boolean containNulls) {
+    return mq.getForeignKeys(rel.getInput(0), containNulls);
+  }
+
+  /** Catch-all rule when none of the others apply. */
   public ImmutableBitSet getForeignKeys(RelNode rel, RelMetadataQuery mq,
-      boolean ignoreNulls) {
+      boolean containNulls) {
     // no information available
     return EMPTY_BIT_SET;
   }

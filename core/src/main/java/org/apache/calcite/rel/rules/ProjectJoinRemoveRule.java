@@ -62,6 +62,19 @@ import java.util.stream.Collectors;
  *
  * <blockquote>
  * <pre>select s.product_id from sales as s</pre></blockquote>
+ *
+ * <p>Another instance,
+ *
+ * <blockquote>
+ * <pre>select e.deptno, e.ename
+ * from emp as e
+ * inner join dept as d
+ * on e.deptno = d.deptno</pre></blockquote>
+ *
+ * <p>becomes
+ *
+ * <blockquote>
+ * <pre>select e.deptno, e.ename from emp as e</pre></blockquote>
  */
 @Value.Enclosing
 public class ProjectJoinRemoveRule
@@ -91,10 +104,10 @@ public class ProjectJoinRemoveRule
 
     // Check project range
     ImmutableBitSet projectBits = RelOptUtil.InputFinder.bits(project.getProjects(), null);
-    boolean onlyUseLeft = projectBits.asList().stream()
-        .allMatch(i -> i >= 0 && i < join.getLeft().getRowType().getFieldCount());
-    boolean onlyUseRight = projectBits.asList().stream()
-        .allMatch(i -> i >= join.getLeft().getRowType().getFieldCount()
+    final int leftFieldsNum = join.getLeft().getRowType().getFieldCount();
+    final boolean onlyUseLeft = projectBits.asList().stream()
+        .allMatch(i -> i >= 0 && i < leftFieldsNum);
+    final boolean onlyUseRight = projectBits.asList().stream().allMatch(i -> i >= leftFieldsNum
             && i < join.getRowType().getFieldCount());
 
     if (!onlyUseLeft && !onlyUseRight) {
@@ -136,12 +149,12 @@ public class ProjectJoinRemoveRule
 
     RelNode node;
     if (isLeftSideReserved.getAsBoolean()) {
-      node = project.copy(project.getTraitSet(), join.getLeft(), project.getProjects(), 
-          project.getRowType());
+      node =
+          project.copy(project.getTraitSet(), join.getLeft(),
+              project.getProjects(), project.getRowType());
     } else {
-      final int offset = join.getLeft().getRowType().getFieldCount();
       final List<RexNode> newExprs = project.getProjects().stream()
-          .map(expr -> RexUtil.shift(expr, -offset))
+          .map(expr -> RexUtil.shift(expr, -leftFieldsNum))
           .collect(Collectors.toList());
       node =
           project.copy(project.getTraitSet(), join.getRight(), newExprs,
