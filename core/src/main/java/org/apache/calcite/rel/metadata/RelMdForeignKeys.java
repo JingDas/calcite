@@ -196,9 +196,7 @@ public class RelMdForeignKeys
     final Set<Integer> foreignKeys = referentialConstraints.stream()
         .map(RelReferentialConstraint::getColumnPairs)
         .flatMap(Collection::stream)
-        .map(pair -> {
-          return pair.source;
-        })
+        .map(pair -> pair.source)
         .collect(Collectors.toSet());
 
     if (!containNulls) {
