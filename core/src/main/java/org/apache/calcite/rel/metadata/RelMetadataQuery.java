@@ -510,9 +510,9 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
   }
 
   /**
-   * Extract foreign keys from relNode. Foreign keys are represented as an
-   * {@link org.apache.calcite.util.ImmutableBitSet}, where each bit position
-   * represents a 0-based output column ordinal.
+   * Extract foreign keys from {@link org.apache.calcite.rel.RelNode}.
+   * Foreign keys are represented as an {@link org.apache.calcite.util.ImmutableBitSet},
+   * where each bit position represents a 0-based output column ordinal.
    *
    * @param rel         the relational expression
    * @param containNulls if true, allow containing null values when determining
