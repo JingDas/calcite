@@ -127,12 +127,12 @@ public class ProjectJoinRemoveRule
 
     // For inner join, should also check foreign keys additionally
     if (JoinRelType.INNER == join.getJoinType()) {
-      final ImmutableBitSet leftForeignKeys = mq.getForeignKeys(join.getLeft(), false);
-      final ImmutableBitSet rightForeignKeys = mq.getForeignKeys(join.getRight(), false);
+            final ImmutableBitSet leftForeignKeys = mq.getForeignKeys(join.getLeft(), false);
       if (onlyUseLeft && !areForeignKeysValid(
           leftKeys, rightKeys, leftForeignKeys, mq, join.getLeft(), join.getRight())) {
         return;
       }
+      final ImmutableBitSet rightForeignKeys = mq.getForeignKeys(join.getRight(), false);
       if (onlyUseRight && !areForeignKeysValid(
           rightKeys, leftKeys, rightForeignKeys, mq, join.getRight(), join.getLeft())) {
         return;
