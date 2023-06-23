@@ -107,8 +107,8 @@ public class ProjectJoinRemoveRule
     final int leftFieldsNum = join.getLeft().getRowType().getFieldCount();
     final boolean onlyUseLeft = projectBits.asList().stream()
         .allMatch(i -> i >= 0 && i < leftFieldsNum);
-    final boolean onlyUseRight = projectBits.asList().stream().allMatch(i -> i >= leftFieldsNum
-            && i < join.getRowType().getFieldCount());
+    final boolean onlyUseRight = projectBits.asList().stream()
+        .allMatch(i -> i >= leftFieldsNum && i < join.getRowType().getFieldCount());
 
     if (!onlyUseLeft && !onlyUseRight) {
       return;
