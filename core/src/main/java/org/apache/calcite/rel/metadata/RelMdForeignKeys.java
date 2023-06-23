@@ -193,7 +193,7 @@ public class RelMdForeignKeys
     if (referentialConstraints == null || referentialConstraints.isEmpty()) {
       return EMPTY_BIT_SET;
     }
-    Set<Integer> foreignKeys = referentialConstraints.stream()
+    final Set<Integer> foreignKeys = referentialConstraints.stream()
         .map(RelReferentialConstraint::getColumnPairs)
         .flatMap(Collection::stream)
         .map(pair -> {
