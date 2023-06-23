@@ -180,8 +180,11 @@ public class ProjectJoinRemoveRule
     List<RelReferentialConstraint> referentialConstraints;
     for (IntPair foreignUniqueKey : IntPair.zip(foreignColumns, uniqueColumns)) {
       RelColumnOrigin foreignOrigin = mq.getColumnOrigin(foreignSideRel, foreignUniqueKey.source);
+      if (foreignOrigin == null) {
+        return false;
+      }
       RelColumnOrigin uniqueOrigin = mq.getColumnOrigin(uniqueSideRel, foreignUniqueKey.target);
-      if (foreignOrigin == null || uniqueOrigin == null) {
+      if (uniqueOrigin == null) {
         return false;
       }
       referentialConstraints = foreignOrigin.getOriginTable().getReferentialConstraints();
