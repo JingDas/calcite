@@ -282,6 +282,24 @@ public class RelMetadataFixture {
     return this;
   }
 
+  public RelMetadataFixture assertForeignKeysIgnoreNulls(
+      Matcher<ImmutableBitSet> constraintMatcher) {
+    RelNode rel = toRel();
+    RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
+    ImmutableBitSet foreignKeys = mq.getForeignKeys(rel, true);
+    assertFalse(foreignKeys.isEmpty());
+    assertThat(foreignKeys, constraintMatcher);
+    return this;
+  }
+
+  public RelMetadataFixture assertForeignKeysIgnoreNullsAreEmpty() {
+    RelNode rel = toRel();
+    RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
+    ImmutableBitSet foreignKeys = mq.getForeignKeys(rel, true);
+    assertTrue(foreignKeys.isEmpty());
+    return this;
+  }
+
   private RelMetadataFixture checkColumnOrigin(
       Consumer<Set<RelColumnOrigin>> action) {
     RelNode rel = toRel();

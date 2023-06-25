@@ -114,18 +114,17 @@ public abstract class BuiltInMetadata {
             BuiltInMethod.FOREIGN_KEYS.method);
 
     /**
-     * Extract foreign keys from {@link org.apache.calcite.rel.RelNode}. 
-     * Foreign keys are represented as an {@link org.apache.calcite.util.ImmutableBitSet}, 
+     * Extract foreign keys from {@link org.apache.calcite.rel.RelNode}.
+     * Foreign keys are represented as an {@link org.apache.calcite.util.ImmutableBitSet},
      * where each bit position represents a 0-based output column ordinal.
      *
-     * @param containNulls if true, allow containing null values when determining
+     * @param ignoreNulls if true, allow containing null values when determining
      *                     whether the keys are foreign keys
      *
      * @return bit set of foreign keys, or empty if not enough information is
-     * available to make that determination (whereas empty indicates definitely
-     * no foreign keys at all)
+     * available to make that determination
      */
-    ImmutableBitSet getForeignKeys(boolean containNulls);
+    ImmutableBitSet getForeignKeys(boolean ignoreNulls);
 
     /**
      * Handler API.

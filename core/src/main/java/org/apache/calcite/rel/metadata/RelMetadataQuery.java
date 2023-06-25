@@ -515,17 +515,16 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
    * where each bit position represents a 0-based output column ordinal.
    *
    * @param rel         the relational expression
-   * @param containNulls if true, allow containing null values when determining
+   * @param ignoreNulls if true, allow containing null values when determining
    *                     whether the keys are foreign keys
    *
    * @return bit set of foreign keys, or empty if not enough information is
-   * available to make that determination (whereas empty indicates definitely
-   * no foreign keys at all)
+   * available to make that determination
    */
-  public ImmutableBitSet getForeignKeys(RelNode rel, boolean containNulls) {
+  public ImmutableBitSet getForeignKeys(RelNode rel, boolean ignoreNulls) {
     for (;;) {
       try {
-        return foreignKeysHandler.getForeignKeys(rel, this, containNulls);
+        return foreignKeysHandler.getForeignKeys(rel, this, ignoreNulls);
       } catch (MetadataHandlerProvider.NoHandler e) {
         foreignKeysHandler = revise(BuiltInMetadata.ForeignKeys.Handler.class);
       }

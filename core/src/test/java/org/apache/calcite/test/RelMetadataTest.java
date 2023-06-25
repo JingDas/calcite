@@ -279,71 +279,169 @@ public class RelMetadataTest {
 
   @Test void testForeignKeysAggregateEmpty() {
     sql("select hiredate, sum(sal), count(deptno) from emp group by hiredate")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
+  }
+
+  @Test void testForeignKeysIgnoreNullsAggregateEmpty() {
+    sql("select hiredate, sum(sal), count(deptno) from empnullables group by hiredate")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysAggregateKey() {
     sql("select count(sal), deptno, count(deptno) from emp group by deptno")
-        .assertForeignKeys(equalTo(bitSetOf(1)));
+        .assertForeignKeys(equalTo(bitSetOf(1)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsAggregateKey() {
+    sql("select count(sal), deptno, count(deptno) from empnullables group by deptno")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
   }
 
   @Test void testForeignKeysTableOnly() {
     sql("select deptno, ename from emp")
-        .assertForeignKeys(equalTo(bitSetOf(0)));
+        .assertForeignKeys(equalTo(bitSetOf(0)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(0)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsTableOnly() {
+    sql("select deptno, ename from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(0)));
   }
 
   @Test void testForeignKeysTableOnlyEmpty() {
     sql("select ename, job from emp")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
+  }
+
+  @Test void testForeignKeysIgnoreNullsTableOnlyEmpty() {
+    sql("select ename, job from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysExpressionEmpty() {
     sql("select deptno + 1, ename from emp")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
+  }
+
+  @Test void testForeignKeysIgnoreNullsExpressionEmpty() {
+    sql("select deptno + 1, ename from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysFilter() {
     sql("select deptno, ename from emp where ename = 'lucy' and deptno = 1001")
-        .assertForeignKeys(equalTo(bitSetOf(0)));
+        .assertForeignKeys(equalTo(bitSetOf(0)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(0)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsFilter() {
+    sql("select deptno, ename from empnullables where ename = 'lucy' and deptno = 1001")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(0)));
   }
 
   @Test void testForeignKeysFilterEmpty() {
     sql("select ename from emp where deptno = 1001")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
+  }
+
+  @Test void testForeignKeysIgnoreNullsFilterEmpty() {
+    sql("select ename from empnullables where deptno = 1001")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysInnerJoinLeft() {
     sql("select emp.deptno, dept.name, emp.deptno from emp, dept")
-        .assertForeignKeys(equalTo(bitSetOf(0, 2)));
+        .assertForeignKeys(equalTo(bitSetOf(0, 2)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(0, 2)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsInnerJoinLeft() {
+    sql("select empnullables.deptno, dept.name, empnullables.deptno from empnullables, dept")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(0, 2)));
   }
 
   @Test void testForeignKeysInnerJoinRight() {
     sql("select dept.name, emp.deptno, emp.deptno from dept, emp")
-        .assertForeignKeys(equalTo(bitSetOf(1, 2)));
+        .assertForeignKeys(equalTo(bitSetOf(1, 2)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1, 2)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsInnerJoinRight() {
+    sql("select dept.name, empnullables.deptno, empnullables.deptno from dept, empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1, 2)));
   }
 
   @Test void testForeignKeysLeftOuterJoin() {
     sql("select name as dname, emp.deptno, dept.name from emp left outer join dept"
         + " on emp.deptno = dept.deptno")
-        .assertForeignKeys(equalTo(bitSetOf(1)));
+        .assertForeignKeys(equalTo(bitSetOf(1)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsLeftOuterJoin() {
+    sql("select name as dname, empnullables.deptno, dept.name "
+        + "from empnullables left outer join dept "
+        + "on empnullables.deptno = dept.deptno")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
   }
 
   @Test void testForeignKeysRightOuterJoin() {
     sql("select name as dname, emp.deptno, dept.name, emp.deptno from dept right outer join emp"
         + " on emp.deptno = dept.deptno")
-        .assertForeignKeys(equalTo(bitSetOf(1, 3)));
+        .assertForeignKeys(equalTo(bitSetOf(1, 3)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1, 3)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsRightOuterJoin() {
+    sql("select name as dname, empnullables.deptno, dept.name, empnullables.deptno "
+        + "from dept right outer join empnullables "
+        + "on empnullables.deptno = dept.deptno")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1, 3)));
   }
 
   @Test void testForeignKeysOuterJoinEmpty() {
     sql("select name as dname, emp.deptno, dept.name from dept left outer join emp"
         + " on emp.deptno = dept.deptno")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsOuterJoinEmpty() {
+    sql("select name as dname, empnullables.deptno, dept.name "
+        + "from dept left outer join empnullables "
+        + "on empnullables.deptno = dept.deptno")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
   }
 
   @Test void testForeignKeysFullOuterJoinEmpty() {
     sql("select name as dname, emp.deptno from emp full outer join dept"
         + " on emp.deptno = dept.deptno")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsFullOuterJoinEmpty() {
+    sql("select name as dname, empnullables.deptno from empnullables full outer join dept"
+        + " on empnullables.deptno = dept.deptno")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
   }
 
   @Test void testForeignKeysJoinAggregateFilter() {
@@ -353,62 +451,139 @@ public class RelMetadataTest {
         + "(select count(sal), deptno, ename from emp group by deptno, ename) emp_agg "
         + "on dept.deptno = emp_agg.deptno "
         + "where emp_agg.ename = 'job'")
-        .assertForeignKeys(equalTo(bitSetOf(1)));
+        .assertForeignKeys(equalTo(bitSetOf(1)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsJoinAggregateFilter() {
+    sql("select dept.name, emp_agg.deptno, emp_agg.ename "
+        + "from dept "
+        + "right join "
+        + "(select count(sal), deptno, ename from empnullables group by deptno, ename) emp_agg "
+        + "on dept.deptno = emp_agg.deptno "
+        + "where emp_agg.ename = 'job'")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
   }
 
   @Test void testForeignKeysValuesEmpty() {
     sql("values(1,2,3)")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysUnionAllEmpty() {
     sql("select name, deptno from dept union all select ename, deptno from emp")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
+  }
+
+  @Test void testForeignKeysIgnoreNullsUnionAllEmpty() {
+    sql("select name, deptno from dept union all select ename, deptno from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysSelfUnionAll() {
     sql("select ename, deptno from emp union all select ename, deptno from emp")
-        .assertForeignKeys(equalTo(bitSetOf(1)));
+        .assertForeignKeys(equalTo(bitSetOf(1)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysIgnoreSelfUnionAll() {
+    sql("select ename, deptno from empnullables union all select ename, deptno from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
   }
 
   @Test void testForeignKeysUnionEmpty() {
     sql("select name, deptno from dept union select ename, deptno from emp")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
+  }
+
+  @Test void testForeignKeysIgnoreNullsUnionEmpty() {
+    sql("select name, deptno from dept union select ename, deptno from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysSelfUnion() {
     sql("select ename, deptno from emp union select ename, deptno from emp")
-        .assertForeignKeys(equalTo(bitSetOf(1)));
+        .assertForeignKeys(equalTo(bitSetOf(1)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsSelfUnion() {
+    sql("select ename, deptno from empnullables union select ename, deptno from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
   }
 
   @Test void testForeignKeysMinus() {
     sql("select ename, deptno from emp except all select name, deptno from dept")
-        .assertForeignKeys(equalTo(bitSetOf(1)));
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
+  }
+
+  @Test void testForeignKeysIgnoreNullsMinus() {
+    sql("select ename, deptno from empnullables except all select name, deptno from dept")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysSelfMinus() {
     sql("select ename, deptno from emp except all select ename, deptno from emp")
-        .assertForeignKeys(equalTo(bitSetOf(1)));
+        .assertForeignKeys(equalTo(bitSetOf(1)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsSelfMinus() {
+    sql("select ename, deptno from empnullables except all select ename, deptno from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
   }
 
   @Test void testForeignKeysMinusEmpty() {
     sql("select name, deptno from dept except all select ename, deptno from emp")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
+  }
+
+  @Test void testForeignKeysIgnoreNullsMinusEmpty() {
+    sql("select name, deptno from dept except all select ename, deptno from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysIntersect() {
     sql("select name, deptno from dept intersect all select ename, deptno from emp")
-        .assertForeignKeys(equalTo(bitSetOf(1)));
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
+  }
+
+  @Test void testForeignKeysIgnoreNullsIntersect() {
+    sql("select name, deptno from dept intersect all select ename, deptno from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   @Test void testForeignKeysSelfIntersect() {
     sql("select ename, deptno from emp intersect all select ename, deptno from emp")
-        .assertForeignKeys(equalTo(bitSetOf(1)));
+        .assertForeignKeys(equalTo(bitSetOf(1)))
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
+  }
+
+  @Test void testForeignKeysIgnoreNullsSelfIntersect() {
+    sql("select ename, deptno from emp intersect all select ename, deptno from empnullables")
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNulls(equalTo(bitSetOf(1)));
   }
 
   @Test void testForeignKeysSelfIntersectEmpty() {
     sql("select name, deptno from dept intersect all select name, deptno from dept")
-        .assertForeignKeysAreEmpty();
+        .assertForeignKeysAreEmpty()
+        .assertForeignKeysIgnoreNullsAreEmpty();
   }
 
   // ----------------------------------------------------------------------

@@ -40,7 +40,6 @@ import org.immutables.value.Value;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 /**
@@ -127,7 +126,7 @@ public class ProjectJoinRemoveRule
 
     // For inner join, should also check foreign keys additionally
     if (JoinRelType.INNER == join.getJoinType()) {
-            final ImmutableBitSet leftForeignKeys = mq.getForeignKeys(join.getLeft(), false);
+      final ImmutableBitSet leftForeignKeys = mq.getForeignKeys(join.getLeft(), false);
       if (onlyUseLeft && !areForeignKeysValid(
           leftKeys, rightKeys, leftForeignKeys, mq, join.getLeft(), join.getRight())) {
         return;
@@ -139,16 +138,16 @@ public class ProjectJoinRemoveRule
       }
     }
 
-    BooleanSupplier isLeftSideReserved = () -> isLeftJoin || (isInnerJoin && onlyUseLeft);
-    final List<Integer> joinKeys = isLeftSideReserved.getAsBoolean() ? rightKeys : leftKeys;
+    final boolean isLeftSideReserved = isLeftJoin || (isInnerJoin && onlyUseLeft);
+    final List<Integer> joinKeys = isLeftSideReserved ? rightKeys : leftKeys;
     if (Boolean.FALSE.equals(
-        mq.areColumnsUnique(isLeftSideReserved.getAsBoolean() ? join.getRight() : join.getLeft(),
+        mq.areColumnsUnique(isLeftSideReserved ? join.getRight() : join.getLeft(),
             ImmutableBitSet.of(joinKeys)))) {
       return;
     }
 
     RelNode node;
-    if (isLeftSideReserved.getAsBoolean()) {
+    if (isLeftSideReserved) {
       node =
           project.copy(project.getTraitSet(), join.getLeft(),
               project.getProjects(), project.getRowType());
