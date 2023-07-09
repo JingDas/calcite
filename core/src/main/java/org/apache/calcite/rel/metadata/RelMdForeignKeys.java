@@ -16,6 +16,7 @@
  */
 package org.apache.calcite.rel.metadata;
 
+import org.apache.calcite.plan.RelOptForeignKey;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelReferentialConstraint;
@@ -31,16 +32,22 @@ import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.InferredRexTableInputRef;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
+import org.apache.calcite.util.mapping.IntPair;
 
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +60,7 @@ import java.util.stream.Collectors;
  */
 public class RelMdForeignKeys
     implements MetadataHandler<BuiltInMetadata.ForeignKeys> {
-  public static final ImmutableBitSet EMPTY_BIT_SET = ImmutableBitSet.of();
+  public static final Set<RelOptForeignKey> EMPTY_BIT_SET = Sets.newHashSet();
   public static final RelMetadataProvider SOURCE =
       ReflectiveRelMetadataProvider.reflectiveSource(
           new RelMdForeignKeys(), BuiltInMetadata.ForeignKeys.Handler.class);
@@ -68,25 +75,28 @@ public class RelMdForeignKeys
     return BuiltInMetadata.ForeignKeys.DEF;
   }
 
-  public ImmutableBitSet getForeignKeys(Filter rel, RelMetadataQuery mq, boolean ignoreNulls) {
+  public Set<RelOptForeignKey> getForeignKeys(Filter rel, RelMetadataQuery mq,
+      boolean ignoreNulls) {
     return mq.getForeignKeys(rel.getInput(), ignoreNulls);
   }
 
-  public ImmutableBitSet getForeignKeys(Sort rel, RelMetadataQuery mq, boolean ignoreNulls) {
+  public Set<RelOptForeignKey> getForeignKeys(Sort rel, RelMetadataQuery mq,
+      boolean ignoreNulls) {
     return mq.getForeignKeys(rel.getInput(), ignoreNulls);
   }
 
-  public ImmutableBitSet getForeignKeys(Correlate rel, RelMetadataQuery mq,
+  public Set<RelOptForeignKey> getForeignKeys(Correlate rel, RelMetadataQuery mq,
       boolean ignoreNulls) {
     return mq.getForeignKeys(rel.getLeft(), ignoreNulls);
   }
 
-  public ImmutableBitSet getForeignKeys(TableModify rel, RelMetadataQuery mq,
+  public Set<RelOptForeignKey> getForeignKeys(TableModify rel, RelMetadataQuery mq,
       boolean ignoreNulls) {
     return mq.getForeignKeys(rel.getInput(), ignoreNulls);
   }
 
-  public ImmutableBitSet getForeignKeys(Join rel, RelMetadataQuery mq, boolean ignoreNulls) {
+  public Set<RelOptForeignKey> getForeignKeys(Join rel, RelMetadataQuery mq,
+      boolean ignoreNulls) {
     final RelNode left = rel.getLeft();
     final RelNode right = rel.getRight();
     if (!rel.getJoinType().projectsRight()) {
@@ -94,51 +104,112 @@ public class RelMdForeignKeys
       // returns the LHS
       return mq.getForeignKeys(left, ignoreNulls);
     }
-
     int nLeftColumns = rel.getLeft().getRowType().getFieldList().size();
-    ImmutableBitSet outForeignKeys = ImmutableBitSet.of();
+    final Set<RelOptForeignKey> foreignKeys = new HashSet<>();
+    final Set<RelOptForeignKey> leftInputForeignKeys =
+        mq.getForeignKeys(left, ignoreNulls);
+    final Set<RelOptForeignKey> rightInputForeignKeys =
+        mq.getForeignKeys(right, ignoreNulls);
 
+    if (leftInputForeignKeys.isEmpty() || rightInputForeignKeys.isEmpty()) {
+      return EMPTY_BIT_SET;
+    }
+    // shift right index
+    Set<RelOptForeignKey> shiftedRightInputForeignKeys = rightInputForeignKeys.stream()
+        .map(foreignKey -> {
+          return foreignKey.shift(nLeftColumns,
+              RelOptForeignKey.ShiftSide.INFERRED_FOREIGN_SOURCE,
+              RelOptForeignKey.ShiftSide.INFERRED_UNIQUE_TARGET);
+        })
+        .collect(Collectors.toSet());
     if (!rel.getJoinType().generatesNullsOnLeft() || ignoreNulls) {
-      ImmutableBitSet leftInputForeignKeys = mq.getForeignKeys(left, ignoreNulls);
-      outForeignKeys = outForeignKeys.union(leftInputForeignKeys);
+      foreignKeys.addAll(
+          tryMerge(leftInputForeignKeys, shiftedRightInputForeignKeys));
     }
     if (!rel.getJoinType().generatesNullsOnRight() || ignoreNulls) {
-      ImmutableBitSet rightInputForeignKeys = mq.getForeignKeys(right, ignoreNulls);
-      ImmutableBitSet.Builder rightOutForeignKeys = ImmutableBitSet.builder();
-      for (int index : rightInputForeignKeys.asList()) {
-        rightOutForeignKeys.set(index + nLeftColumns);
-      }
-      outForeignKeys = outForeignKeys.union(rightOutForeignKeys.build());
+      foreignKeys.addAll(
+          tryMerge(shiftedRightInputForeignKeys, leftInputForeignKeys));
     }
-    return outForeignKeys;
+    return foreignKeys;
   }
 
-  public ImmutableBitSet getForeignKeys(Aggregate rel, RelMetadataQuery mq,
+  private Set<RelOptForeignKey> tryMerge(Set<RelOptForeignKey> foreignKeys,
+      Set<RelOptForeignKey> uniqueKeys) {
+    ImmutableMap.Builder<Set<InferredRexTableInputRef>, RelOptForeignKey>
+        inferredUniqueKeyMapBuilder = ImmutableMap.builder();
+    // The upper-level relational algebra may use constraints,
+    // so keep the unmerged foreign keys
+    final Set<RelOptForeignKey> mixedForeignKeys = new HashSet<>(foreignKeys);
+    mixedForeignKeys.addAll(uniqueKeys);
+    if (foreignKeys.isEmpty() || uniqueKeys.isEmpty()) {
+      return mixedForeignKeys;
+    }
+    // Build unique keys map, key -> unique table set, value -> unique relOptForeignKey
+    for (RelOptForeignKey uniqueKey : uniqueKeys) {
+      if (!uniqueKey.getConstraints().isEmpty()
+          && uniqueKey.isInferredUniqueKey()) {
+        inferredUniqueKeyMapBuilder.put(
+            Sets.newHashSet(RelOptForeignKey.constraintsRight(uniqueKey.getConstraints())),
+            uniqueKey);
+      }
+    }
+    ImmutableMap<Set<InferredRexTableInputRef>, RelOptForeignKey> inferredUniqueKeyMap =
+        inferredUniqueKeyMapBuilder.build();
+    for (RelOptForeignKey foreignKey : foreignKeys) {
+      if (foreignKey.getConstraints().isEmpty()
+          || !foreignKey.isInferredForeignKey()) {
+        continue;
+      }
+      // try merge
+      Set<InferredRexTableInputRef> foreignSideNeededUniqueSet =
+          Sets.newHashSet(RelOptForeignKey.constraintsRight(foreignKey.getConstraints()));
+      RelOptForeignKey inferredUniqueKey =
+          inferredUniqueKeyMap.get(foreignSideNeededUniqueSet);
+      if (inferredUniqueKey != null) {
+        mixedForeignKeys.add(
+            RelOptForeignKey.of(
+            foreignKey.getConstraints().stream()
+                .map(constraint -> {
+                  return Pair.of(constraint.left.copyWith(true),
+                      constraint.right.copyWith(true));
+                })
+                .collect(Collectors.toList()),
+            ImmutableBitSet.of(foreignKey.getForeignColumns()),
+            ImmutableBitSet.of(inferredUniqueKey.getUniqueColumns())));
+      }
+    }
+    return mixedForeignKeys;
+  }
+
+  public Set<RelOptForeignKey> getForeignKeys(Aggregate rel, RelMetadataQuery mq,
       boolean ignoreNulls) {
     final ImmutableBitSet groupSet = rel.getGroupSet();
     if (groupSet.isEmpty()) {
       return EMPTY_BIT_SET;
     }
-    final ImmutableBitSet inputForeignKeys = mq.getForeignKeys(rel.getInput(), ignoreNulls);
-    if (inputForeignKeys.isEmpty()) {
-      return EMPTY_BIT_SET;
-    }
-    return groupSet.intersect(inputForeignKeys);
+    final Set<RelOptForeignKey> inputForeignKeys =
+        mq.getForeignKeys(rel.getInput(), ignoreNulls);
+    return inputForeignKeys.stream()
+        .filter(foreignKey -> {
+          return filterValidateColumns(groupSet, foreignKey);
+        })
+        .collect(Collectors.toSet());
   }
 
-  public ImmutableBitSet getForeignKeys(Project rel, RelMetadataQuery mq,
+  public Set<RelOptForeignKey> getForeignKeys(Project rel, RelMetadataQuery mq,
       boolean ignoreNulls) {
     return getProjectForeignKeys(rel, mq, ignoreNulls, rel.getProjects());
   }
 
-  public ImmutableBitSet getForeignKeys(Calc rel, RelMetadataQuery mq,
+  public Set<RelOptForeignKey> getForeignKeys(Calc rel, RelMetadataQuery mq,
       boolean ignoreNulls) {
     RexProgram program = rel.getProgram();
     return getProjectForeignKeys(rel, mq, ignoreNulls,
         Util.transform(program.getProjectList(), program::expandLocalRef));
   }
 
-  private static ImmutableBitSet getProjectForeignKeys(SingleRel rel, RelMetadataQuery mq,
+  private static Set<RelOptForeignKey> getProjectForeignKeys(SingleRel rel,
+      RelMetadataQuery mq,
       boolean ignoreNulls,
       List<RexNode> projExprs) {
 
@@ -158,26 +229,32 @@ public class RelMdForeignKeys
     if (inColumnsUsed.isEmpty()) {
       return EMPTY_BIT_SET;
     }
-
-    final Map<Integer, ImmutableBitSet> mapInToOutPos =
-        Maps.transformValues(inToOutIndexBuilder.build().asMap(), ImmutableBitSet::of);
-    final ImmutableBitSet inputForeignKeys =
+    final Map<Integer, List<Integer>> mapInToOutPos =
+        Maps.transformValues(inToOutIndexBuilder.build().asMap(), Lists::newArrayList);
+    final Set<RelOptForeignKey> inputForeignKeys =
         mq.getForeignKeys(rel.getInput(), ignoreNulls);
     if (inputForeignKeys.isEmpty()) {
       return EMPTY_BIT_SET;
     }
-
-    ImmutableBitSet allOutColumns = ImmutableBitSet.of();
-    for (int index : inputForeignKeys.asList()) {
-      ImmutableBitSet outColumns = mapInToOutPos.get(index);
-      if (outColumns != null && !outColumns.isEmpty()) {
-        allOutColumns = allOutColumns.union(outColumns);
-      }
-    }
-    return allOutColumns;
+    return inputForeignKeys.stream()
+        .filter(foreignKey -> {
+          return filterValidateColumns(inColumnsUsed, foreignKey);
+        })
+        .flatMap(foreignKey -> {
+          return foreignKey.permute(mapInToOutPos, mapInToOutPos).stream();
+        })
+        .collect(Collectors.toSet());
   }
 
-  public ImmutableBitSet getForeignKeys(TableScan rel, RelMetadataQuery mq,
+  private static boolean filterValidateColumns(ImmutableBitSet columnsUsed,
+      RelOptForeignKey foreignKey) {
+    return (!foreignKey.getForeignColumns().isEmpty()
+        && columnsUsed.contains(foreignKey.getForeignColumns()))
+        || (!foreignKey.getUniqueColumns().isEmpty()
+        && columnsUsed.contains(foreignKey.getUniqueColumns()));
+  }
+
+  public Set<RelOptForeignKey> getForeignKeys(TableScan rel, RelMetadataQuery mq,
       boolean ignoreNulls) {
     final RelOptTable table = rel.getTable();
     final BuiltInMetadata.ForeignKeys.Handler handler =
@@ -188,45 +265,84 @@ public class RelMdForeignKeys
 
     final List<RelReferentialConstraint> referentialConstraints =
         table.getReferentialConstraints();
-    if (referentialConstraints == null || referentialConstraints.isEmpty()) {
-      return EMPTY_BIT_SET;
-    }
-    final Set<Integer> foreignKeys = referentialConstraints.stream()
-        .map(RelReferentialConstraint::getColumnPairs)
-        .flatMap(Collection::stream)
-        .map(pair -> pair.source)
-        .collect(Collectors.toSet());
+    final List<ImmutableBitSet> keys = table.getKeys();
 
-    if (!ignoreNulls) {
-      final List<RelDataTypeField> fieldList = rel.getRowType().getFieldList();
-      return ImmutableBitSet.of(foreignKeys.stream()
-          .filter(index -> !fieldList.get(index).getType().isNullable())
+    final Set<RelOptForeignKey> foreignKeys = new HashSet<>();
+    if (referentialConstraints != null) {
+      foreignKeys.addAll(referentialConstraints.stream()
+          .map(constraint -> {
+            List<Pair<InferredRexTableInputRef, InferredRexTableInputRef>> constraints =
+                constraint.getColumnPairs().stream()
+                    .map(intPair -> {
+                      return Pair.of(
+                          InferredRexTableInputRef.of(constraint.getSourceQualifiedName(),
+                              intPair.source,
+                              false),
+                          InferredRexTableInputRef.of(constraint.getTargetQualifiedName(),
+                              intPair.target,
+                              false));
+                    })
+                    .collect(Collectors.toList());
+            return RelOptForeignKey.of(constraints,
+                ImmutableBitSet.of(IntPair.left(constraint.getColumnPairs())),
+                ImmutableBitSet.of());
+          })
           .collect(Collectors.toSet()));
     }
-    return ImmutableBitSet.of(foreignKeys);
+    if (keys != null) {
+      foreignKeys.addAll(
+          keys.stream()
+              .map(keyBitSet -> {
+                List<Pair<InferredRexTableInputRef, InferredRexTableInputRef>> constraints =
+                    keyBitSet.asList().stream()
+                        .map(index -> {
+                          return Pair.of(
+                              InferredRexTableInputRef.of(),
+                              InferredRexTableInputRef.of(
+                                  table.getQualifiedName(),
+                                  index,
+                                  false));
+                        })
+                        .collect(Collectors.toList());
+                return RelOptForeignKey.of(constraints, ImmutableBitSet.of(), keyBitSet);
+              })
+              .collect(Collectors.toList()));
+    }
+    if (!ignoreNulls) {
+      final List<RelDataTypeField> fieldList = rel.getRowType().getFieldList();
+      return foreignKeys.stream()
+          .filter(foreignKey -> {
+            return foreignKey.getForeignColumns().asSet().stream()
+                .noneMatch(index -> fieldList.get(index).getType().isNullable())
+                && foreignKey.getUniqueColumns().asSet().stream()
+                .noneMatch(index -> fieldList.get(index).getType().isNullable());
+          })
+          .collect(Collectors.toSet());
+    }
+    return foreignKeys;
   }
 
   /**
    * The foreign keys of SetOp are precisely the intersection of its every
    * input foreign keys.
    */
-  public ImmutableBitSet getForeignKeys(SetOp rel, RelMetadataQuery mq,
+  public Set<RelOptForeignKey> getForeignKeys(SetOp rel, RelMetadataQuery mq,
       boolean ignoreNulls) {
 
-    ImmutableBitSet foreignKeys = ImmutableBitSet.of();
+    Set<RelOptForeignKey> foreignKeys = new HashSet<>();
     for (RelNode input : rel.getInputs()) {
-      ImmutableBitSet inputForeignKeys = mq.getForeignKeys(input, ignoreNulls);
+      Set<RelOptForeignKey> inputForeignKeys = mq.getForeignKeys(input, ignoreNulls);
       if (inputForeignKeys.isEmpty()) {
         return EMPTY_BIT_SET;
       }
       foreignKeys = foreignKeys.isEmpty()
-          ? inputForeignKeys : foreignKeys.intersect(inputForeignKeys);
+          ? inputForeignKeys : Sets.intersection(foreignKeys, inputForeignKeys);
     }
     return foreignKeys;
   }
 
   /** Catch-all rule when none of the others apply. */
-  public ImmutableBitSet getForeignKeys(RelNode rel, RelMetadataQuery mq,
+  public Set<RelOptForeignKey> getForeignKeys(RelNode rel, RelMetadataQuery mq,
       boolean ignoreNulls) {
     // no information available
     return EMPTY_BIT_SET;

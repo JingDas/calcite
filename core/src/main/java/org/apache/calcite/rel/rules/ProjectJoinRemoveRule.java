@@ -16,28 +16,25 @@
  */
 package org.apache.calcite.rel.rules;
 
+import org.apache.calcite.plan.RelOptForeignKey;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelReferentialConstraint;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinInfo;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.rel.logical.LogicalProject;
-import org.apache.calcite.rel.metadata.RelColumnOrigin;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.tools.RelBuilderFactory;
 import org.apache.calcite.util.ImmutableBitSet;
-import org.apache.calcite.util.mapping.IntPair;
 
 import org.immutables.value.Value;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -126,14 +123,15 @@ public class ProjectJoinRemoveRule
 
     // For inner join, should also check foreign keys additionally
     if (JoinRelType.INNER == join.getJoinType()) {
-      final ImmutableBitSet leftForeignKeys = mq.getForeignKeys(join.getLeft(), false);
-      if (onlyUseLeft && !areForeignKeysValid(
-          leftKeys, rightKeys, leftForeignKeys, mq, join.getLeft(), join.getRight())) {
+      final ImmutableBitSet leftKeyColumns = ImmutableBitSet.of(leftKeys);
+      final ImmutableBitSet rightKeyColumns =
+          ImmutableBitSet.of(rightKeys).shift(leftFieldsNum);
+      final Set<RelOptForeignKey> foreignKeys =
+          mq.getConfirmedForeignKeys(join, false);
+      if (onlyUseLeft && !areForeignKeysValid(leftKeyColumns, rightKeyColumns, foreignKeys)) {
         return;
       }
-      final ImmutableBitSet rightForeignKeys = mq.getForeignKeys(join.getRight(), false);
-      if (onlyUseRight && !areForeignKeysValid(
-          rightKeys, leftKeys, rightForeignKeys, mq, join.getRight(), join.getLeft())) {
+      if (onlyUseRight && !areForeignKeysValid(rightKeyColumns, leftKeyColumns, foreignKeys)) {
         return;
       }
     }
@@ -167,42 +165,21 @@ public class ProjectJoinRemoveRule
    * 1. Make sure that every foreign column is always a foreign key.
    * 2. The target of foreign key is the correct corresponding unique key.
    */
-  private static boolean areForeignKeysValid(List<Integer> foreignColumns,
-      List<Integer> uniqueColumns, ImmutableBitSet foreignKeys, RelMetadataQuery mq,
-      RelNode foreignSideRel, RelNode uniqueSideRel) {
+  private static boolean areForeignKeysValid(ImmutableBitSet foreignColumns,
+      ImmutableBitSet uniqueColumns, Set<RelOptForeignKey> foreignKeys) {
     if (foreignKeys.isEmpty()) {
       return false;
     }
-    if (!foreignKeys.contains(ImmutableBitSet.of(foreignColumns))) {
+    if (foreignColumns.isEmpty() || uniqueColumns.isEmpty()) {
       return false;
     }
-    List<RelReferentialConstraint> referentialConstraints;
-    for (IntPair foreignUniqueKey : IntPair.zip(foreignColumns, uniqueColumns)) {
-      RelColumnOrigin foreignOrigin = mq.getColumnOrigin(foreignSideRel, foreignUniqueKey.source);
-      if (foreignOrigin == null) {
-        return false;
-      }
-      RelColumnOrigin uniqueOrigin = mq.getColumnOrigin(uniqueSideRel, foreignUniqueKey.target);
-      if (uniqueOrigin == null) {
-        return false;
-      }
-      referentialConstraints = foreignOrigin.getOriginTable().getReferentialConstraints();
-      if (referentialConstraints == null || referentialConstraints.isEmpty()) {
-        return false;
-      }
-
-      final Set<IntPair> constraintsSet = referentialConstraints.stream()
-          .map(RelReferentialConstraint::getColumnPairs)
-          .flatMap(Collection::stream)
-          .collect(Collectors.toSet());
-      if (!constraintsSet.contains(
-          IntPair.of(
-          foreignOrigin.getOriginColumnOrdinal(),
-          uniqueOrigin.getOriginColumnOrdinal()))) {
-        return false;
+    for (RelOptForeignKey foreignKey : foreignKeys) {
+      if (foreignKey.getForeignColumns().contains(foreignColumns)
+          && foreignKey.getUniqueColumns().contains(uniqueColumns)) {
+        return true;
       }
     }
-    return true;
+    return false;
   }
 
   /** Rule configuration. */

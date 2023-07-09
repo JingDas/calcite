@@ -17,6 +17,7 @@
 package org.apache.calcite.rel.metadata;
 
 import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptForeignKey;
 import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
@@ -40,6 +41,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.calcite.linq4j.Nullness.castNonNull;
 
@@ -511,17 +513,17 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
 
   /**
    * Extract foreign keys from {@link org.apache.calcite.rel.RelNode}.
-   * Foreign keys are represented as an {@link org.apache.calcite.util.ImmutableBitSet},
-   * where each bit position represents a 0-based output column ordinal.
+   * Foreign keys are represented as an {@link org.apache.calcite.plan.RelOptForeignKey},
+   * in which each bit position represents a 0-based output column ordinal.
    *
    * @param rel         the relational expression
    * @param ignoreNulls if true, allow containing null values when determining
    *                     whether the keys are foreign keys
    *
-   * @return bit set of foreign keys, or empty if not enough information is
-   * available to make that determination
+   * @return set of foreign keys(contains intermediate inferred foreign keys),
+   * or empty if not enough information is available to make that determination
    */
-  public ImmutableBitSet getForeignKeys(RelNode rel, boolean ignoreNulls) {
+  public Set<RelOptForeignKey> getForeignKeys(RelNode rel, boolean ignoreNulls) {
     for (;;) {
       try {
         return foreignKeysHandler.getForeignKeys(rel, this, ignoreNulls);
@@ -529,6 +531,26 @@ public class RelMetadataQuery extends RelMetadataQueryBase {
         foreignKeysHandler = revise(BuiltInMetadata.ForeignKeys.Handler.class);
       }
     }
+  }
+
+  /**
+   * Extract confirmed foreign keys from {@link org.apache.calcite.rel.RelNode}.
+   * Foreign keys are represented as an {@link org.apache.calcite.plan.RelOptForeignKey},
+   * in which each bit position represents a 0-based output column ordinal.
+   *
+   * @param rel         the relational expression
+   * @param ignoreNulls if true, allow containing null values when determining
+   *                     whether the keys are foreign keys
+   *
+   * @return confirmed set of foreign keys, or empty if not enough information
+   * is available to make that determination
+   *
+   * @see RelMetadataQuery#getForeignKeys(org.apache.calcite.rel.RelNode, boolean)
+   */
+  public Set<RelOptForeignKey> getConfirmedForeignKeys(RelNode rel, boolean ignoreNulls) {
+    return getForeignKeys(rel, ignoreNulls).stream()
+        .filter(RelOptForeignKey::isConfirmed)
+        .collect(Collectors.toSet());
   }
 
   /**

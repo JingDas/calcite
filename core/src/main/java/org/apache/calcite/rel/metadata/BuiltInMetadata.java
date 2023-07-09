@@ -17,6 +17,7 @@
 package org.apache.calcite.rel.metadata;
 
 import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptForeignKey;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
@@ -124,14 +125,14 @@ public abstract class BuiltInMetadata {
      * @return bit set of foreign keys, or empty if not enough information is
      * available to make that determination
      */
-    ImmutableBitSet getForeignKeys(boolean ignoreNulls);
+    Set<RelOptForeignKey> getForeignKeys(boolean ignoreNulls);
 
     /**
      * Handler API.
      */
     @FunctionalInterface
     interface Handler extends MetadataHandler<ForeignKeys> {
-      ImmutableBitSet getForeignKeys(
+      Set<RelOptForeignKey> getForeignKeys(
           RelNode rel,
           RelMetadataQuery mq,
           boolean ignoreNulls);

@@ -17,6 +17,7 @@
 package org.apache.calcite.test;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptForeignKey;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
@@ -65,7 +66,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -265,38 +265,25 @@ public class RelMetadataFixture {
     return this;
   }
 
-  public RelMetadataFixture assertForeignKeys(Matcher<ImmutableBitSet> constraintMatcher) {
+  public RelMetadataFixture assertForeignKeys(Matcher<Set<RelOptForeignKey>> matcher,
+      Matcher<Set<RelOptForeignKey>> confirmedMatcher) {
     RelNode rel = toRel();
     RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
-    ImmutableBitSet foreignKeys = mq.getForeignKeys(rel, false);
-    assertFalse(foreignKeys.isEmpty());
-    assertThat(foreignKeys, constraintMatcher);
-    return this;
-  }
-
-  public RelMetadataFixture assertForeignKeysAreEmpty() {
-    RelNode rel = toRel();
-    RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
-    ImmutableBitSet foreignKeys = mq.getForeignKeys(rel, false);
-    assertTrue(foreignKeys.isEmpty());
+    Set<RelOptForeignKey> foreignKeys = mq.getForeignKeys(rel, false);
+    assertThat(foreignKeys, matcher);
+    Set<RelOptForeignKey> confirmedForeignKeys = mq.getConfirmedForeignKeys(rel, false);
+    assertThat(confirmedForeignKeys, confirmedMatcher);
     return this;
   }
 
   public RelMetadataFixture assertForeignKeysIgnoreNulls(
-      Matcher<ImmutableBitSet> constraintMatcher) {
+      Matcher<Set<RelOptForeignKey>> matcher, Matcher<Set<RelOptForeignKey>> confirmedMatcher) {
     RelNode rel = toRel();
     RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
-    ImmutableBitSet foreignKeys = mq.getForeignKeys(rel, true);
-    assertFalse(foreignKeys.isEmpty());
-    assertThat(foreignKeys, constraintMatcher);
-    return this;
-  }
-
-  public RelMetadataFixture assertForeignKeysIgnoreNullsAreEmpty() {
-    RelNode rel = toRel();
-    RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
-    ImmutableBitSet foreignKeys = mq.getForeignKeys(rel, true);
-    assertTrue(foreignKeys.isEmpty());
+    Set<RelOptForeignKey> foreignKeys = mq.getForeignKeys(rel, true);
+    assertThat(foreignKeys, matcher);
+    Set<RelOptForeignKey> confirmedForeignKeys = mq.getConfirmedForeignKeys(rel, true);
+    assertThat(confirmedForeignKeys, confirmedMatcher);
     return this;
   }
 
