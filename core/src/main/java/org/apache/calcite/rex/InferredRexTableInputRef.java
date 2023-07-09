@@ -18,10 +18,9 @@ package org.apache.calcite.rex;
 
 import org.apache.calcite.rel.type.RelDataType;
 
-import com.google.common.collect.Lists;
-
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,7 +38,6 @@ public class InferredRexTableInputRef extends RexNode implements Cloneable {
   private @Nullable final List<String> qualifiedName;
   private @Nullable final Integer index;
   private final boolean confirmed;
-  private final String digest;
 
   private InferredRexTableInputRef(@Nullable List<String> qualifiedName,
       @Nullable Integer index,
@@ -77,14 +75,14 @@ public class InferredRexTableInputRef extends RexNode implements Cloneable {
 
   public InferredRexTableInputRef copyWith(boolean confirmed) {
     return InferredRexTableInputRef.of(
-        this.getQualifiedName() == null ? null : Lists.newArrayList(this.getQualifiedName()),
+        this.getQualifiedName() == null ? null : new ArrayList<>(this.getQualifiedName()),
         this.index,
         confirmed);
   }
 
   public InferredRexTableInputRef copy() {
     return InferredRexTableInputRef.of(
-        this.getQualifiedName() == null ? null : Lists.newArrayList(this.getQualifiedName()),
+        this.getQualifiedName() == null ? null : new ArrayList<>(this.getQualifiedName()),
         this.index,
         this.confirmed);
   }
@@ -101,14 +99,14 @@ public class InferredRexTableInputRef extends RexNode implements Cloneable {
     throw new UnsupportedOperationException();
   }
 
-  @Override public boolean equals(Object o) {
-    if (this == o) {
+  @Override public boolean equals(@Nullable Object obj) {
+    if (this == obj) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    InferredRexTableInputRef that = (InferredRexTableInputRef) o;
+    InferredRexTableInputRef that = (InferredRexTableInputRef) obj;
     return Objects.equals(qualifiedName, that.qualifiedName) && Objects.equals(index, that.index);
   }
 

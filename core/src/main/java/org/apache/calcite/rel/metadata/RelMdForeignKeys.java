@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
  */
 public class RelMdForeignKeys
     implements MetadataHandler<BuiltInMetadata.ForeignKeys> {
-  public static final Set<RelOptForeignKey> EMPTY_BIT_SET = Sets.newHashSet();
+  public static final Set<RelOptForeignKey> EMPTY_BIT_SET = new HashSet<>();
   public static final RelMetadataProvider SOURCE =
       ReflectiveRelMetadataProvider.reflectiveSource(
           new RelMdForeignKeys(), BuiltInMetadata.ForeignKeys.Handler.class);

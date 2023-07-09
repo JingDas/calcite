@@ -24,8 +24,11 @@ import org.apache.calcite.util.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +116,7 @@ public class RelOptForeignKey {
   public static List<InferredRexTableInputRef> constraintsLeft(
       List<Pair<InferredRexTableInputRef, InferredRexTableInputRef>> constraints) {
     if (constraints.isEmpty()) {
-      return Lists.newArrayList();
+      return new ArrayList<>();
     }
     return constraints.stream()
         .map(Pair::getKey)
@@ -124,7 +127,7 @@ public class RelOptForeignKey {
   public static List<InferredRexTableInputRef> constraintsRight(
       List<Pair<InferredRexTableInputRef, InferredRexTableInputRef>> constraints) {
     if (constraints.isEmpty()) {
-      return Lists.newArrayList();
+      return new ArrayList<>();
     }
     return constraints.stream()
         .map(Pair::getValue)
@@ -174,17 +177,17 @@ public class RelOptForeignKey {
    * @param mapping the field mapping relationship which can potentially be one-to-many
    * @return mapped sources
    */
-  private Set<Map<Integer, Integer>> flatMappings(List<Integer> sources,
+  private static Set<Map<Integer, Integer>> flatMappings(List<Integer> sources,
       Map<Integer, List<Integer>> mapping) {
     List<List<Integer>> sourceMappings = new ArrayList<>();
     for (int source : sources) {
       List<Integer> sourceMapping = mapping.get(source);
       if (sourceMapping == null || sourceMapping.isEmpty()) {
-        return Sets.newHashSet();
+        return new HashSet<>();
       }
       sourceMappings.add(sourceMapping);
     }
-    Set<Map<Integer, Integer>> sourceTargetMappings = Sets.newHashSet();
+    Set<Map<Integer, Integer>> sourceTargetMappings = new HashSet<>();
     List<List<Integer>> targetMappingProducts = Lists.cartesianProduct(sourceMappings);
     for (List<Integer> target : targetMappingProducts) {
       // build map, key -> sources, value -> mapped targets
@@ -210,19 +213,19 @@ public class RelOptForeignKey {
     ImmutableBitSet shiftedForeignColumns = ImmutableBitSet.of(this.foreignColumns);
     ImmutableBitSet shiftedUniqueColumns = ImmutableBitSet.of(this.uniqueColumns);
     for (ShiftSide shiftSide : shiftSides) {
-      if (ShiftSide.INFERRED_FOREIGN_SOURCE.equals(shiftSide)
+      if (ShiftSide.INFERRED_FOREIGN_SOURCE == shiftSide
           && isInferredForeignKey()) {
         shiftedForeignColumns = shiftedForeignColumns.shift(offset);
       }
-      if (ShiftSide.INFERRED_FOREIGN_TARGET.equals(shiftSide)
+      if (ShiftSide.INFERRED_FOREIGN_TARGET == shiftSide
           && isInferredForeignKey()) {
         shiftedUniqueColumns = shiftedUniqueColumns.shift(offset);
       }
-      if (ShiftSide.INFERRED_UNIQUE_SOURCE.equals(shiftSide)
+      if (ShiftSide.INFERRED_UNIQUE_SOURCE == shiftSide
           && isInferredUniqueKey()) {
         shiftedForeignColumns = shiftedForeignColumns.shift(offset);
       }
-      if (ShiftSide.INFERRED_UNIQUE_TARGET.equals(shiftSide)
+      if (ShiftSide.INFERRED_UNIQUE_TARGET == shiftSide
           && isInferredUniqueKey()) {
         shiftedUniqueColumns = shiftedUniqueColumns.shift(offset);
       }
@@ -284,14 +287,14 @@ public class RelOptForeignKey {
     return RelOptForeignKey.of(copiedConstraints, foreignColumns, uniqueColumns);
   }
 
-  @Override public boolean equals(Object o) {
-    if (this == o) {
+  @Override public boolean equals(@Nullable Object obj) {
+    if (this == obj) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    RelOptForeignKey that = (RelOptForeignKey) o;
+    RelOptForeignKey that = (RelOptForeignKey) obj;
     return constraints.equals(that.constraints)
         && uniqueColumns.equals(that.uniqueColumns)
         && foreignColumns.equals(that.foreignColumns);
