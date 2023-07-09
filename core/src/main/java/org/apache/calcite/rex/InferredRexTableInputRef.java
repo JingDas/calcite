@@ -75,14 +75,14 @@ public class InferredRexTableInputRef extends RexNode implements Cloneable {
 
   public InferredRexTableInputRef copyWith(boolean confirmed) {
     return InferredRexTableInputRef.of(
-        this.getQualifiedName() == null ? null : new ArrayList<>(this.getQualifiedName()),
+        this.qualifiedName == null ? null : new ArrayList<>(this.qualifiedName),
         this.index,
         confirmed);
   }
 
   public InferredRexTableInputRef copy() {
     return InferredRexTableInputRef.of(
-        this.getQualifiedName() == null ? null : new ArrayList<>(this.getQualifiedName()),
+        this.qualifiedName == null ? null : new ArrayList<>(qualifiedName),
         this.index,
         this.confirmed);
   }
@@ -111,7 +111,7 @@ public class InferredRexTableInputRef extends RexNode implements Cloneable {
   }
 
   @Override public int hashCode() {
-    return Objects.hash(qualifiedName, index);
+    return Objects.hash(digest);
   }
 
   @Override public String toString() {

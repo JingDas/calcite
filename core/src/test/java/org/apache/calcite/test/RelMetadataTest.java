@@ -192,7 +192,7 @@ public class RelMetadataTest {
   private static final List<String> DEPT_QNAME =
       ImmutableList.of("CATALOG", "SALES", "DEPT");
 
-  private static final Set<RelOptForeignKey> EMPTY_FOREIGN_KEY_SET = Sets.newHashSet();
+  private static final Set<RelOptForeignKey> EMPTY_FOREIGN_KEY_SET = new HashSet<>();
 
   /** Ensures that tests that use a lot of memory do not run at the same
    * time. */
