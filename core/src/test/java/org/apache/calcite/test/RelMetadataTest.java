@@ -307,12 +307,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select count(sal), deptno, count(deptno) from emp group by deptno")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -322,12 +322,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select count(sal), deptno, count(deptno) from empnullables group by deptno")
         .assertForeignKeys(equalTo(EMPTY_FOREIGN_KEY_SET), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -337,26 +337,26 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(EMP_QNAME, 0, false))),
-            bitSetOf(0),
-            ImmutableBitSet.of()),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(3),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(EMP_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(0)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(3),
+                ImmutableBitSet.of()));
     sql("select empno, deptno, ename, deptno from emp")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -366,12 +366,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(0),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(0),
+                ImmutableBitSet.of()));
     sql("select deptno, ename from empnullables")
         .assertForeignKeys(equalTo(EMPTY_FOREIGN_KEY_SET), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(
@@ -410,12 +410,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(0),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(0),
+                ImmutableBitSet.of()));
     sql("select deptno, ename from emp where ename = 'lucy' and deptno = 1001")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -425,12 +425,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(0),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(0),
+                ImmutableBitSet.of()));
     sql("select deptno, ename from empnullables where ename = 'lucy' and deptno = 1001")
         .assertForeignKeys(equalTo(EMPTY_FOREIGN_KEY_SET), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -454,42 +454,42 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(0),
-            ImmutableBitSet.of()),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(2),
-            ImmutableBitSet.of()),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(0),
+                ImmutableBitSet.of()),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(2),
+                ImmutableBitSet.of()),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(3)));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(0),
-            bitSetOf(3)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(2),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(0),
+                bitSetOf(3)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(2),
+                bitSetOf(3)));
     foreignKeys.addAll(confirmedForeignKeys);
     sql("select emp.deptno, dept.name, emp.deptno, dept.deptno from emp, dept")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(confirmedForeignKeys))
@@ -501,44 +501,44 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(3)));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(0),
-            bitSetOf(3)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(2),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(0),
+                bitSetOf(3)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(2),
+                bitSetOf(3)));
     Set<RelOptForeignKey> foreignKeysIgnoreNulls =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(0),
-            ImmutableBitSet.of()),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(2),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(0),
+                ImmutableBitSet.of()),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(2),
+                ImmutableBitSet.of()));
     foreignKeysIgnoreNulls.addAll(confirmedForeignKeys);
     foreignKeysIgnoreNulls.addAll(foreignKeys);
     sql("select empnullables.deptno, dept.name, empnullables.deptno, dept.deptno "
@@ -552,42 +552,42 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(2),
-            ImmutableBitSet.of()),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(2),
+                ImmutableBitSet.of()),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(3)));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            bitSetOf(3)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(2),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                bitSetOf(3)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(2),
+                bitSetOf(3)));
     foreignKeys.addAll(confirmedForeignKeys);
     sql("select dept.name, emp.deptno, emp.deptno, dept.deptno from dept, emp")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(confirmedForeignKeys))
@@ -598,28 +598,28 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(2)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(2)));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            bitSetOf(2)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(3),
-            bitSetOf(2)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                bitSetOf(2)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(3),
+                bitSetOf(2)));
     Set<RelOptForeignKey> foreignKeysIgnoreNull =
         Sets.newHashSet(
             RelOptForeignKey.of(
@@ -649,28 +649,28 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(3)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(3)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                bitSetOf(3)));
     foreignKeys.addAll(confirmedForeignKeys);
     sql("select name as dname, emp.deptno, dept.name, dept.deptno "
         + "from emp left outer join dept "
@@ -684,37 +684,37 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(1)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(1)));
     Set<RelOptForeignKey> foreignKeysIgnoreNull =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(1)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(2),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(1)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(2),
+                ImmutableBitSet.of()));
     Set<RelOptForeignKey> confirmedForeignKeysIgnoreNull =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(2),
-            bitSetOf(1)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(2),
+                bitSetOf(1)));
     foreignKeysIgnoreNull.addAll(confirmedForeignKeysIgnoreNull);
     foreignKeysIgnoreNull.addAll(foreignKeys);
     sql("select name as dname, dept.deptno, empnullables.deptno, dept.name "
@@ -729,42 +729,42 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(0)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(2),
-            ImmutableBitSet.of()),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(4),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(0)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(2),
+                ImmutableBitSet.of()),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(4),
+                ImmutableBitSet.of()));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(2),
-            bitSetOf(0)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(4),
-            bitSetOf(0)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(2),
+                bitSetOf(0)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(4),
+                bitSetOf(0)));
     foreignKeys.addAll(confirmedForeignKeys);
     sql("select dept.deptno, name as dname, emp.deptno, dept.name, emp.deptno "
         + "from dept right outer join emp "
@@ -777,44 +777,44 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(4)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(4)));
     Set<RelOptForeignKey> foreignKeysIgnoreNulls =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(3),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(3),
+                ImmutableBitSet.of()));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            bitSetOf(4)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(3),
-            bitSetOf(4)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                bitSetOf(4)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(3),
+                bitSetOf(4)));
     foreignKeysIgnoreNulls.addAll(foreignKeys);
     foreignKeysIgnoreNulls.addAll(confirmedForeignKeys);
     sql("select name as dname, empnullables.deptno, dept.name, "
@@ -830,28 +830,28 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(3)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(3)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                bitSetOf(3)));
     Set<RelOptForeignKey> foreignKeysIgnoreNull = Sets.newHashSet(foreignKeys);
     foreignKeysIgnoreNull.addAll(confirmedForeignKeys);
     sql("select name as dname, emp.deptno, dept.name, dept.deptno "
@@ -866,30 +866,30 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(3)));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            bitSetOf(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                bitSetOf(3)));
     Set<RelOptForeignKey> foreignKeysIgnoreNulls =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     foreignKeysIgnoreNulls.addAll(foreignKeys);
     foreignKeysIgnoreNulls.addAll(confirmedForeignKeys);
     sql("select name as dname, empnullables.deptno, dept.name, dept.deptno "
@@ -904,28 +904,28 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(2)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(2)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            bitSetOf(2)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                bitSetOf(2)));
     foreignKeys.addAll(confirmedForeignKeys);
     sql("select name as dname, emp.deptno, dept.deptno from emp full outer join dept"
         + " on emp.deptno = dept.deptno")
@@ -937,28 +937,28 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeysIgnoreNulls =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(2)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(2)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            bitSetOf(2)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                bitSetOf(2)));
     foreignKeysIgnoreNulls.addAll(confirmedForeignKeys);
     sql("select name as dname, empnullables.deptno, dept.deptno "
         + "from empnullables full outer join dept "
@@ -972,28 +972,28 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(3)),
-        RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(3)),
+            RelOptForeignKey.of(
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            ImmutableBitSet.of(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                ImmutableBitSet.of(3)));
     foreignKeys.addAll(confirmedForeignKeys);
     sql("select dept.name, emp_agg.deptno, emp_agg.ename, dept.deptno "
         + "from dept "
@@ -1009,32 +1009,31 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(3)));
-
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(3)));
     Set<RelOptForeignKey> foreignKeysIgnoreNulls =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     foreignKeysIgnoreNulls.addAll(foreignKeys);
     Set<RelOptForeignKey> confirmedForeignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
-            bitSetOf(1),
-            ImmutableBitSet.of(3)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, true),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, true))),
+                bitSetOf(1),
+                ImmutableBitSet.of(3)));
     foreignKeysIgnoreNulls.addAll(confirmedForeignKeys);
     sql("select dept.name, emp_agg.deptno, emp_agg.ename, dept.deptno "
         + "from dept "
@@ -1072,12 +1071,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select ename, deptno from emp union all select ename, deptno from emp")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -1087,12 +1086,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select ename, deptno from empnullables union all select ename, deptno from empnullables")
         .assertForeignKeys(equalTo(EMPTY_FOREIGN_KEY_SET), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -1115,12 +1114,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select ename, deptno from emp union select ename, deptno from emp")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -1130,12 +1129,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select ename, deptno from empnullables union select ename, deptno from empnullables")
         .assertForeignKeys(equalTo(EMPTY_FOREIGN_KEY_SET), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -1159,12 +1158,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select ename, deptno from emp except all select ename, deptno from emp")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -1174,12 +1173,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select ename, deptno from empnullables except all select ename, deptno from empnullables")
         .assertForeignKeys(equalTo(EMPTY_FOREIGN_KEY_SET), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -1217,12 +1216,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMP_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMP_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select ename, deptno from emp intersect all select ename, deptno from emp")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));
@@ -1232,12 +1231,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            bitSetOf(1),
-            ImmutableBitSet.of()));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(EMPNULLABLES_QNAME, 7, false),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                bitSetOf(1),
+                ImmutableBitSet.of()));
     sql("select ename, deptno from emp intersect all select ename, deptno from empnullables")
         .assertForeignKeys(equalTo(EMPTY_FOREIGN_KEY_SET), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(
@@ -1248,12 +1247,12 @@ public class RelMetadataTest {
     Set<RelOptForeignKey> foreignKeys =
         Sets.newHashSet(
             RelOptForeignKey.of(
-            Lists.newArrayList(
-                Pair.of(
-                InferredRexTableInputRef.of(),
-                InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
-            ImmutableBitSet.of(),
-            bitSetOf(1)));
+                Lists.newArrayList(
+                    Pair.of(
+                        InferredRexTableInputRef.of(),
+                        InferredRexTableInputRef.of(DEPT_QNAME, 0, false))),
+                ImmutableBitSet.of(),
+                bitSetOf(1)));
     sql("select name, deptno from dept intersect all select name, deptno from dept")
         .assertForeignKeys(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET))
         .assertForeignKeysIgnoreNulls(equalTo(foreignKeys), equalTo(EMPTY_FOREIGN_KEY_SET));

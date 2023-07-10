@@ -111,7 +111,7 @@ public class RelMdForeignKeys
     final Set<RelOptForeignKey> rightInputForeignKeys =
         mq.getForeignKeys(right, ignoreNulls);
 
-    if (leftInputForeignKeys.isEmpty() || rightInputForeignKeys.isEmpty()) {
+    if (leftInputForeignKeys.isEmpty() && rightInputForeignKeys.isEmpty()) {
       return EMPTY_BIT_SET;
     }
     // shift right index

@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
  * the unique key on the current {@link org.apache.calcite.rel.RelNode},
  * if not or not be confirmed, it is an empty set.
  *
- * The element positions in {@code uniqueColumns} and {@code foreignColumns}
+ * <p>The element positions in {@code uniqueColumns} and {@code foreignColumns}
  * correspond to each other. The order of elements in {@code uniqueColumns}
  * and {@code foreignColumns} is consistent with the order of constraints in
  * the constraints list.
@@ -63,11 +63,11 @@ import java.util.stream.Collectors;
  * inner join dept as d
  * on e.deptno = d.deptno</pre></blockquote>
  *
- * Invoke the {@link RelMetadataQuery#getConfirmedForeignKeys} method for
+ * <p>Invoke the {@link RelMetadataQuery#getConfirmedForeignKeys} method for
  * the aforementioned {@link org.apache.calcite.rel.RelNode}, the following
  * results can be obtained.
  *
- * {@code constraints} is
+ * <p>{@code constraints} is
  * [[CATALOG, SALES, EMP].$7 -> [CATALOG, SALES, DEPT].$0]
  * {@code foreignColumns} is {0}
  * {@code uniqueColumns} is {3}
@@ -168,7 +168,7 @@ public class RelOptForeignKey {
   /**
    * Flatten the mapping based on the sources, which mapping can be one-to-many.
    *
-   * Example as follows:
+   * <p>Example as follows:
    * sources: [1, 2]
    * mapping: {1: [3, 4], 2: [5, 6]}
    * result: [{1:3, 2:5}, {1:3, 2:6}, {1:4, 2:5}, {1:4, 2:6}]
