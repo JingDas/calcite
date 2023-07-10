@@ -32,6 +32,9 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.tools.RelBuilderFactory;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.Pair;
+
+import com.google.common.collect.Sets;
 
 import org.immutables.value.Value;
 
@@ -173,9 +176,19 @@ public class ProjectJoinRemoveRule
     if (foreignColumns.isEmpty() || uniqueColumns.isEmpty()) {
       return false;
     }
-    for (RelOptForeignKey foreignKey : foreignKeys) {
-      if (foreignKey.getForeignColumns().contains(foreignColumns)
-          && foreignKey.getUniqueColumns().contains(uniqueColumns)) {
+    List<Pair<ImmutableBitSet, ImmutableBitSet>> foreignUniquePairs =
+        Sets.powerSet(foreignKeys).stream()
+            .map(powerSet -> {
+              return Pair.of(powerSet.stream()
+                      .map(RelOptForeignKey::getForeignColumns)
+                      .reduce(ImmutableBitSet.of(), ImmutableBitSet::union),
+                  powerSet.stream()
+                      .map(RelOptForeignKey::getUniqueColumns)
+                      .reduce(ImmutableBitSet.of(), ImmutableBitSet::union));
+            })
+            .collect(Collectors.toList());
+    for (Pair<ImmutableBitSet, ImmutableBitSet> pair : foreignUniquePairs) {
+      if (foreignColumns.equals(pair.left) && uniqueColumns.equals(pair.right)) {
         return true;
       }
     }

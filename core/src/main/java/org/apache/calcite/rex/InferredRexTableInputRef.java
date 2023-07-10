@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * The inferred foreign key and unique key relationships.
  * Within the same level of {@link org.apache.calcite.rel.RelNode},
- * confirmed field is marked as ture they are confirmed to be
+ * confirmed field is marked as ture when they are confirmed to be
  * foreign key and unique key relationships.
  * The propagation and confirmation are performed from bottom to top.
  *
@@ -33,8 +33,8 @@ import java.util.Objects;
  */
 public class InferredRexTableInputRef implements Cloneable {
 
-  private @Nullable final List<String> qualifiedName;
-  private @Nullable final Integer index;
+  private final @Nullable List<String> qualifiedName;
+  private final @Nullable Integer index;
   private final boolean confirmed;
   private final String digest;
 

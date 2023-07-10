@@ -159,10 +159,9 @@ public class RelOptForeignKey {
     if (mappedUniqueColumns.isEmpty()) {
       mappedUniqueColumns.add(this.uniqueColumns);
     }
-    List<List<ImmutableBitSet>> mappedForeignUniqueColumns = new ArrayList<>();
-    mappedForeignUniqueColumns.add(mappedForeignColumns);
-    mappedForeignUniqueColumns.add(mappedUniqueColumns);
-    return Lists.newArrayList(Linq4j.product(mappedForeignUniqueColumns)).stream()
+    return Lists.newArrayList(
+        Linq4j.product(
+            Lists.newArrayList(mappedForeignColumns, mappedUniqueColumns))).stream()
         .map(pair -> {
           return copyWith(pair.get(0), pair.get(1));
         })
