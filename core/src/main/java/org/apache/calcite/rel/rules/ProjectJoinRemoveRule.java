@@ -178,6 +178,7 @@ public class ProjectJoinRemoveRule
     }
     List<Pair<ImmutableBitSet, ImmutableBitSet>> foreignUniquePairs =
         Sets.powerSet(foreignKeys).stream()
+            .filter(subset -> !subset.isEmpty())
             .map(powerSet -> {
               return Pair.of(powerSet.stream()
                       .map(RelOptForeignKey::getForeignColumns)
