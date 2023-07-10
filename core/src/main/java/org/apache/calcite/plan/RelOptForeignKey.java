@@ -16,6 +16,7 @@
  */
 package org.apache.calcite.plan;
 
+import org.apache.calcite.linq4j.Linq4j;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.InferredRexTableInputRef;
 import org.apache.calcite.util.ImmutableBitSet;
@@ -68,7 +69,7 @@ import java.util.stream.Collectors;
  * results can be obtained.
  *
  * <p>{@code constraints} is
- * [[CATALOG, SALES, EMP].$7 -> [CATALOG, SALES, DEPT].$0]
+ * [{left: [CATALOG, SALES, EMP].$7 right: [CATALOG, SALES, DEPT].$0}]
  * {@code foreignColumns} is {0}
  * {@code uniqueColumns} is {3}
  *
@@ -158,7 +159,10 @@ public class RelOptForeignKey {
     if (mappedUniqueColumns.isEmpty()) {
       mappedUniqueColumns.add(this.uniqueColumns);
     }
-    return Lists.cartesianProduct(mappedForeignColumns, mappedUniqueColumns).stream()
+    List<List<ImmutableBitSet>> mappedForeignUniqueColumns = new ArrayList<>();
+    mappedForeignUniqueColumns.add(mappedForeignColumns);
+    mappedForeignUniqueColumns.add(mappedUniqueColumns);
+    return Lists.newArrayList(Linq4j.product(mappedForeignUniqueColumns)).stream()
         .map(pair -> {
           return copyWith(pair.get(0), pair.get(1));
         })
@@ -188,7 +192,7 @@ public class RelOptForeignKey {
       sourceMappings.add(sourceMapping);
     }
     Set<Map<Integer, Integer>> sourceTargetMappings = new HashSet<>();
-    List<List<Integer>> targetMappingProducts = Lists.cartesianProduct(sourceMappings);
+    Iterable<List<Integer>> targetMappingProducts = Linq4j.product(sourceMappings);
     for (List<Integer> target : targetMappingProducts) {
       // build map, key -> sources, value -> mapped targets
       Iterator<Integer> sourceIterator = sources.iterator();

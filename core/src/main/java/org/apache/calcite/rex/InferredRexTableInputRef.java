@@ -16,8 +16,6 @@
  */
 package org.apache.calcite.rex;
 
-import org.apache.calcite.rel.type.RelDataType;
-
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.ArrayList;
@@ -33,11 +31,12 @@ import java.util.Objects;
  *
  * @see org.apache.calcite.plan.RelOptForeignKey
  */
-public class InferredRexTableInputRef extends RexNode implements Cloneable {
+public class InferredRexTableInputRef implements Cloneable {
 
   private @Nullable final List<String> qualifiedName;
   private @Nullable final Integer index;
   private final boolean confirmed;
+  private final String digest;
 
   private InferredRexTableInputRef(@Nullable List<String> qualifiedName,
       @Nullable Integer index,
@@ -85,18 +84,6 @@ public class InferredRexTableInputRef extends RexNode implements Cloneable {
         this.qualifiedName == null ? null : new ArrayList<>(qualifiedName),
         this.index,
         this.confirmed);
-  }
-
-  @Override public RelDataType getType() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override public <R> R accept(RexVisitor<R> visitor) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override public <R, P> R accept(RexBiVisitor<R, P> visitor, P arg) {
-    throw new UnsupportedOperationException();
   }
 
   @Override public boolean equals(@Nullable Object obj) {
