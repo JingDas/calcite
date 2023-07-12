@@ -179,14 +179,14 @@ public class ProjectJoinRemoveRule
     List<Pair<ImmutableBitSet, ImmutableBitSet>> foreignUniquePairs =
         Sets.powerSet(foreignKeys).stream()
             .filter(subset -> !subset.isEmpty())
-            .map(powerSet -> {
-              return Pair.of(powerSet.stream()
-                      .map(RelOptForeignKey::getForeignColumns)
-                      .reduce(ImmutableBitSet.of(), ImmutableBitSet::union),
-                  powerSet.stream()
-                      .map(RelOptForeignKey::getUniqueColumns)
-                      .reduce(ImmutableBitSet.of(), ImmutableBitSet::union));
-            })
+            .map(
+                powerSet -> Pair.of(
+                powerSet.stream()
+                    .map(RelOptForeignKey::getForeignColumns)
+                    .reduce(ImmutableBitSet.of(), ImmutableBitSet::union),
+                powerSet.stream()
+                    .map(RelOptForeignKey::getUniqueColumns)
+                    .reduce(ImmutableBitSet.of(), ImmutableBitSet::union)))
             .collect(Collectors.toList());
     for (Pair<ImmutableBitSet, ImmutableBitSet> pair : foreignUniquePairs) {
       if (foreignColumns.equals(pair.left) && uniqueColumns.equals(pair.right)) {

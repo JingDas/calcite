@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
  */
 public class RelMdForeignKeys
     implements MetadataHandler<BuiltInMetadata.ForeignKeys> {
-  public static final Set<RelOptForeignKey> EMPTY_BIT_SET = new HashSet<>();
+  protected static final Set<RelOptForeignKey> EMPTY_BIT_SET = new HashSet<>();
   public static final RelMetadataProvider SOURCE =
       ReflectiveRelMetadataProvider.reflectiveSource(
           new RelMdForeignKeys(), BuiltInMetadata.ForeignKeys.Handler.class);
@@ -116,11 +116,10 @@ public class RelMdForeignKeys
     }
     // shift right index
     Set<RelOptForeignKey> shiftedRightInputForeignKeys = rightInputForeignKeys.stream()
-        .map(foreignKey -> {
-          return foreignKey.shift(nLeftColumns,
-              RelOptForeignKey.ShiftSide.INFERRED_FOREIGN_SOURCE,
-              RelOptForeignKey.ShiftSide.INFERRED_UNIQUE_TARGET);
-        })
+        .map(
+            foreignKey -> foreignKey.shift(nLeftColumns,
+            RelOptForeignKey.ShiftSide.INFERRED_FOREIGN_SOURCE,
+            RelOptForeignKey.ShiftSide.INFERRED_UNIQUE_TARGET))
         .collect(Collectors.toSet());
     if (!rel.getJoinType().generatesNullsOnLeft() || ignoreNulls) {
       foreignKeys.addAll(
@@ -168,14 +167,14 @@ public class RelMdForeignKeys
       if (inferredUniqueKey != null) {
         mixedForeignKeys.add(
             RelOptForeignKey.of(
-            foreignKey.getConstraints().stream()
-                .map(constraint -> {
-                  return Pair.of(constraint.left.copyWith(true),
-                      constraint.right.copyWith(true));
-                })
-                .collect(Collectors.toList()),
-            ImmutableBitSet.of(foreignKey.getForeignColumns()),
-            ImmutableBitSet.of(inferredUniqueKey.getUniqueColumns())));
+                foreignKey.getConstraints().stream()
+                    .map(
+                        constraint -> Pair.of(
+                        constraint.left.copy(true),
+                        constraint.right.copy(true)))
+                    .collect(Collectors.toList()),
+                ImmutableBitSet.of(foreignKey.getForeignColumns()),
+                ImmutableBitSet.of(inferredUniqueKey.getUniqueColumns())));
       }
     }
     return mixedForeignKeys;
@@ -190,9 +189,7 @@ public class RelMdForeignKeys
     final Set<RelOptForeignKey> inputForeignKeys =
         mq.getForeignKeys(rel.getInput(), ignoreNulls);
     return inputForeignKeys.stream()
-        .filter(foreignKey -> {
-          return filterValidateColumns(groupSet, foreignKey);
-        })
+        .filter(foreignKey -> filterValidateColumns(groupSet, foreignKey))
         .collect(Collectors.toSet());
   }
 
@@ -237,12 +234,8 @@ public class RelMdForeignKeys
       return EMPTY_BIT_SET;
     }
     return inputForeignKeys.stream()
-        .filter(foreignKey -> {
-          return filterValidateColumns(inColumnsUsed, foreignKey);
-        })
-        .flatMap(foreignKey -> {
-          return foreignKey.permute(mapInToOutPos, mapInToOutPos).stream();
-        })
+        .filter(foreignKey -> filterValidateColumns(inColumnsUsed, foreignKey))
+        .flatMap(foreignKey -> foreignKey.permute(mapInToOutPos, mapInToOutPos).stream())
         .collect(Collectors.toSet());
   }
 
@@ -273,15 +266,14 @@ public class RelMdForeignKeys
           .map(constraint -> {
             List<Pair<InferredRexTableInputRef, InferredRexTableInputRef>> constraints =
                 constraint.getColumnPairs().stream()
-                    .map(intPair -> {
-                      return Pair.of(
-                          InferredRexTableInputRef.of(constraint.getSourceQualifiedName(),
-                              intPair.source,
-                              false),
-                          InferredRexTableInputRef.of(constraint.getTargetQualifiedName(),
-                              intPair.target,
-                              false));
-                    })
+                    .map(
+                        intPair -> Pair.of(
+                        InferredRexTableInputRef.of(constraint.getSourceQualifiedName(),
+                            intPair.source,
+                            false),
+                        InferredRexTableInputRef.of(constraint.getTargetQualifiedName(),
+                            intPair.target,
+                            false)))
                     .collect(Collectors.toList());
             return RelOptForeignKey.of(constraints,
                 ImmutableBitSet.of(IntPair.left(constraint.getColumnPairs())),
@@ -295,14 +287,13 @@ public class RelMdForeignKeys
               .map(keyBitSet -> {
                 List<Pair<InferredRexTableInputRef, InferredRexTableInputRef>> constraints =
                     keyBitSet.asList().stream()
-                        .map(index -> {
-                          return Pair.of(
-                              InferredRexTableInputRef.of(),
-                              InferredRexTableInputRef.of(
-                                  table.getQualifiedName(),
-                                  index,
-                                  false));
-                        })
+                        .map(
+                            index -> Pair.of(
+                            InferredRexTableInputRef.of(),
+                            InferredRexTableInputRef.of(
+                                table.getQualifiedName(),
+                                index,
+                                false)))
                         .collect(Collectors.toList());
                 return RelOptForeignKey.of(constraints, ImmutableBitSet.of(), keyBitSet);
               })
@@ -311,12 +302,10 @@ public class RelMdForeignKeys
     if (!ignoreNulls) {
       final List<RelDataTypeField> fieldList = rel.getRowType().getFieldList();
       return foreignKeys.stream()
-          .filter(foreignKey -> {
-            return foreignKey.getForeignColumns().asSet().stream()
-                .noneMatch(index -> fieldList.get(index).getType().isNullable())
-                && foreignKey.getUniqueColumns().asSet().stream()
-                .noneMatch(index -> fieldList.get(index).getType().isNullable());
-          })
+          .filter(foreignKey -> foreignKey.getForeignColumns().asSet().stream()
+              .noneMatch(index -> fieldList.get(index).getType().isNullable())
+              && foreignKey.getUniqueColumns().asSet().stream()
+              .noneMatch(index -> fieldList.get(index).getType().isNullable()))
           .collect(Collectors.toSet());
     }
     return foreignKeys;

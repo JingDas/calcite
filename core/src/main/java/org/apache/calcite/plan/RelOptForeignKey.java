@@ -71,7 +71,7 @@ import java.util.stream.Collectors;
  * <p>{@code constraints} is
  * [{left: [CATALOG, SALES, EMP].$7 right: [CATALOG, SALES, DEPT].$0}]
  * {@code foreignColumns} is {0}
- * {@code uniqueColumns} is {3}
+ * {@code uniqueColumns} is {2}
  *
  * @see org.apache.calcite.rex.InferredRexTableInputRef
  * @see org.apache.calcite.plan.RelOptForeignKey
@@ -135,7 +135,43 @@ public class RelOptForeignKey {
         .collect(Collectors.toList());
   }
 
-  /** Permutes relOptForeignKey set according to given mappings. */
+  /** Permutes relOptForeignKey set according to given mappings.
+   *
+   * <p>Example as follows:
+   * Simplified representation as foreignColumns and uniqueColumns
+   *
+   * <p>current relOptForeignKey:
+   * foreignColumns: {1, 3}
+   * uniqueColumns: {4}
+   *
+   * <p>permute params:
+   * foreignMapping: {1: [2, 6], 3: [7]}
+   * uniqueMapping: {4: [5, 8]}
+   *
+   * <p>result:
+   * [
+   *   {
+   *     foreignColumns: {2, 7}
+   *     uniqueColumns: {5}
+   *   },
+   *   {
+   *     foreignColumns: {2, 7}
+   *     uniqueColumns: {8}
+   *   },
+   *   {
+   *     foreignColumns: {6, 7}
+   *     uniqueColumns: {5}
+   *   },
+   *   {
+   *     foreignColumns: {6, 7}
+   *     uniqueColumns: {8}
+   *   }
+   * ]
+   *
+   * @param foreignMapping foreignKey mapping relationship
+   * @param uniqueMapping uniqueKey mapping relationship
+   * @return mapped relOptForeignKey set
+   */
   public Set<RelOptForeignKey> permute(Map<Integer, List<Integer>> foreignMapping,
       Map<Integer, List<Integer>> uniqueMapping) {
     if (foreignMapping.isEmpty() && uniqueMapping.isEmpty()) {
@@ -160,11 +196,9 @@ public class RelOptForeignKey {
       mappedUniqueColumns.add(this.uniqueColumns);
     }
     return Lists.newArrayList(
-        Linq4j.product(
-            Lists.newArrayList(mappedForeignColumns, mappedUniqueColumns))).stream()
-        .map(pair -> {
-          return copyWith(pair.get(0), pair.get(1));
-        })
+            Linq4j.product(
+                Lists.newArrayList(mappedForeignColumns, mappedUniqueColumns))).stream()
+        .map(pair -> copyWith(pair.get(0), pair.get(1)))
         .collect(Collectors.toSet());
   }
 
@@ -243,12 +277,11 @@ public class RelOptForeignKey {
    * in higher-level {@link org.apache.calcite.rel.RelNode} in the future.
    */
   public boolean isInferredForeignKey() {
-    return this.constraints.stream().allMatch(constraint -> {
-      return !constraint.left.isConfirmed()
-          && !constraint.right.isConfirmed()
-          && !constraint.left.isNull()
-          && !constraint.right.isNull();
-    });
+    return this.constraints.stream()
+        .allMatch(constraint -> !constraint.left.isConfirmed()
+            && !constraint.right.isConfirmed()
+            && !constraint.left.isNull()
+            && !constraint.right.isNull());
   }
 
   /**
@@ -258,24 +291,21 @@ public class RelOptForeignKey {
    * in higher-level {@link org.apache.calcite.rel.RelNode} in the future.
    */
   public boolean isInferredUniqueKey() {
-    return this.constraints.stream().allMatch(constraint -> {
-      return !constraint.left.isConfirmed()
-          && !constraint.right.isConfirmed()
-          && constraint.left.isNull()
-          && !constraint.right.isNull();
-    });
+    return this.constraints.stream()
+        .allMatch(constraint -> !constraint.left.isConfirmed()
+            && !constraint.right.isConfirmed()
+            && constraint.left.isNull()
+            && !constraint.right.isNull());
   }
 
   /** The inferred foreign key and unique key relationships have been determined,
    * which typically occurs after a join operation. */
   public boolean isConfirmed() {
     return this.constraints.stream()
-        .allMatch(constraint -> {
-          return constraint.left.isConfirmed()
-              && constraint.right.isConfirmed()
-              && !constraint.left.isNull()
-              && !constraint.right.isNull();
-        });
+        .allMatch(constraint -> constraint.left.isConfirmed()
+            && constraint.right.isConfirmed()
+            && !constraint.left.isNull()
+            && !constraint.right.isNull());
   }
 
   /** Deep copy based on foreignColumns and uniqueColumns. */
@@ -283,10 +313,8 @@ public class RelOptForeignKey {
       ImmutableBitSet uniqueColumns) {
     List<Pair<InferredRexTableInputRef, InferredRexTableInputRef>> copiedConstraints =
         this.constraints.stream()
-        .map(constraint -> {
-          return Pair.of(constraint.left.copy(), constraint.right.copy());
-        })
-        .collect(Collectors.toList());
+            .map(constraint -> Pair.of(constraint.left.copy(), constraint.right.copy()))
+            .collect(Collectors.toList());
     return RelOptForeignKey.of(copiedConstraints, foreignColumns, uniqueColumns);
   }
 

@@ -31,7 +31,7 @@ import java.util.Objects;
  *
  * @see org.apache.calcite.plan.RelOptForeignKey
  */
-public class InferredRexTableInputRef implements Cloneable {
+public class InferredRexTableInputRef {
 
   private final @Nullable List<String> qualifiedName;
   private final @Nullable Integer index;
@@ -72,7 +72,7 @@ public class InferredRexTableInputRef implements Cloneable {
     return qualifiedName == null && index == null;
   }
 
-  public InferredRexTableInputRef copyWith(boolean confirmed) {
+  public InferredRexTableInputRef copy(boolean confirmed) {
     return InferredRexTableInputRef.of(
         this.qualifiedName == null ? null : new ArrayList<>(this.qualifiedName),
         this.index,
