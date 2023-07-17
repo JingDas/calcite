@@ -202,6 +202,7 @@ val javadocAggregateIncludingTests by tasks.registering(Javadoc::class) {
     description = "Generates aggregate javadoc for all the artifacts"
 
     val sourceSets = subprojects
+        .filter { it.name != "bom" }
         .mapNotNull { it.extensions.findByType<SourceSetContainer>() }
         .flatMap { listOf(it.named("main"), it.named("test")) }
 
@@ -382,11 +383,21 @@ allprojects {
                     include("**/*.sh", "**/*.bsh", "**/*.cmd", "**/*.bat")
                     include("**/*.properties", "**/*.yml")
                     include("**/*.xsd", "**/*.xsl", "**/*.xml")
+                    include("**/*.fmpp", "**/*.ftl", "**/*.jj")
                     // Autostyle does not support gitignore yet https://github.com/autostyle/autostyle/issues/13
                     exclude("bin/**", "out/**", "target/**", "gradlew*")
                     exclude(rootDir.resolve(".ratignore").readLines())
                 }
                 license()
+                endWithNewline()
+            }
+            format("web") {
+                filter {
+                    include("**/*.md", "**/*.html")
+                    exclude("**/test/**/*.html")
+                }
+                trimTrailingWhitespace()
+                endWithNewline()
             }
             if (project == rootProject) {
                 // Spotless does not exclude subprojects when using target(...)

@@ -40,6 +40,7 @@ import org.apache.calcite.rel.externalize.RelJsonReader;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.runtime.PairList;
 import org.apache.calcite.runtime.SqlFunctions;
 import org.apache.calcite.schema.FunctionContext;
 import org.apache.calcite.schema.FunctionParameter;
@@ -71,7 +72,6 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -139,6 +139,21 @@ public class Smalls {
           int.class);
 
   private Smalls() {}
+
+  private static QueryableTable identity(Integer i) {
+    final Enumerable<Integer> enumerable = Linq4j.asEnumerable(ImmutableList.of(i));
+    return new AbstractQueryableTable(Integer.class) {
+      @Override public <E> Queryable<E> asQueryable(
+          QueryProvider queryProvider, SchemaPlus schema, String tableName) {
+        //noinspection unchecked
+        return (Queryable<E>) enumerable.asQueryable();
+      }
+
+      @Override public RelDataType getRowType(RelDataTypeFactory typeFactory) {
+        return typeFactory.builder().add("i", SqlTypeName.INTEGER).build();
+      }
+    };
+  }
 
   private static QueryableTable oneThreePlus(String s) {
     List<Integer> items;
@@ -1060,6 +1075,13 @@ public class Smalls {
     }
   }
 
+  /** A table function that returns its input value. */
+  public static class IdentityTableFunction {
+    public static QueryableTable eval(Integer i) {
+      return identity(i);
+    }
+  }
+
   /** The real MazeTable may be found in example/function. This is a cut-down
    * version to support a test. */
   public static class MazeTable extends AbstractTable
@@ -1359,12 +1381,12 @@ public class Smalls {
 
     @Override public RelDataType getRowType(RelDataTypeFactory typeFactory) {
       int columnCount = columnNames.length;
-      final List<Pair<String, RelDataType>> columnDesc =
-          new ArrayList<>(columnCount);
+      final PairList<String, RelDataType> columnDesc =
+          PairList.withCapacity(columnCount);
       for (int i = 0; i < columnCount; i++) {
         final RelDataType colType = typeFactory
             .createJavaType(columnTypes[i]);
-        columnDesc.add(Pair.of(columnNames[i], colType));
+        columnDesc.add(columnNames[i], colType);
       }
       return typeFactory.createStructType(columnDesc);
     }

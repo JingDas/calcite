@@ -71,6 +71,12 @@
   githubId: chunweilei
   org: Alibaba
   role: PMC
+- name: Dan Zou
+  apacheId: zoudan
+  githubId: zoudan
+  pronouns: he/him
+  org: ByteDance
+  role: Committer
 - name: Danny Chan
   apacheId: danny0405
   githubId: danny0405
@@ -243,6 +249,11 @@
   githubId: nishantmonu51
   org: Hortonworks
   role: Committer
+- name: Oliver Lee
+  apacheId: oliver
+  githubId: olivrlee
+  org: Google
+  role: Committer
 - name: Ruben Quesada Lopez
   apacheId: rubenql
   githubId: rubenada
@@ -291,6 +302,12 @@
   githubId: tdunning
   org: MapR
   role: PMC
+- name: TJ Banghart
+  apacheId: tjbanghart
+  githubId: tjbanghart
+  pronouns: he/him
+  org: Google
+  role: Committer
 - name: Vineet Garg
   apacheId: vgarg
   githubId: vineetgarg02
@@ -322,10 +339,22 @@
   pronouns: he/him
   org: Hikvision
   role: Committer
+- name: Yong Liu
+  apacheId: jackylau
+  githubId: liuyongvs
+  pronouns: he/him
+  org: Ant Financial
+  role: Committer
 - name: Zhaohui Xu
   apacheId: zhaohui
   githubId: xy2953396112
   org: Ant Financial
+  role: Committer
+- name: Zhe Hu
+  apacheId: zhehu
+  githubId: ILuffZhe
+  pronouns: he/him
+  org: Hikvision
   role: Committer
 - name: Zhen Wang
   apacheId: zhenw

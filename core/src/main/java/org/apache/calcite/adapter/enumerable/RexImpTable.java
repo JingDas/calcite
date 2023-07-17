@@ -117,7 +117,10 @@ import static org.apache.calcite.sql.fun.SqlInternalOperators.LITERAL_AGG;
 import static org.apache.calcite.sql.fun.SqlInternalOperators.THROW_UNLESS;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ACOSH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAYS_OVERLAP;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAYS_ZIP;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_AGG;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_APPEND;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_COMPACT;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_CONCAT;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_CONCAT_AGG;
@@ -125,22 +128,32 @@ import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_CONTAINS;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_DISTINCT;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_EXCEPT;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_INTERSECT;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_JOIN;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_LENGTH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_MAX;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_MIN;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_POSITION;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_PREPEND;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_REMOVE;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_REPEAT;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_REVERSE;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_SIZE;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_TO_STRING;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ARRAY_UNION;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ASINH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ATANH;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.BIT_LENGTH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.BOOL_AND;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.BOOL_OR;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.CEIL_BIG_QUERY;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.CHAR;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.CHR;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.COMPRESS;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.CONCAT2;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.CONCAT_FUNCTION;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.CONCAT_FUNCTION_WITH_NULL;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.CONCAT_WS;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.CONCAT_WS_MSSQL;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.COSH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.COTH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.CSC;
@@ -157,11 +170,14 @@ import static org.apache.calcite.sql.fun.SqlLibraryOperators.ENDS_WITH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.EXISTS_NODE;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.EXTRACT_VALUE;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.EXTRACT_XML;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.FLOOR_BIG_QUERY;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.FORMAT_DATE;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.FORMAT_DATETIME;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.FORMAT_TIME;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.FORMAT_TIMESTAMP;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.FROM_BASE32;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.FROM_BASE64;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.FROM_HEX;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.ILIKE;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.JSON_DEPTH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.JSON_INSERT;
@@ -178,7 +194,10 @@ import static org.apache.calcite.sql.fun.SqlLibraryOperators.LOG;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.LOGICAL_AND;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.LOGICAL_OR;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.LPAD;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.MAP_CONCAT;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.MAP_ENTRIES;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.MAP_FROM_ARRAYS;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.MAP_FROM_ENTRIES;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.MAP_KEYS;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.MAP_VALUES;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.MAX_BY;
@@ -213,6 +232,7 @@ import static org.apache.calcite.sql.fun.SqlLibraryOperators.SPACE;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.SPLIT;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.STARTS_WITH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.STRCMP;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.STR_TO_MAP;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TANH;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TIME;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TIMESTAMP;
@@ -221,8 +241,10 @@ import static org.apache.calcite.sql.fun.SqlLibraryOperators.TIMESTAMP_MILLIS;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TIMESTAMP_SECONDS;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TIMESTAMP_TRUNC;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TIME_TRUNC;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.TO_BASE32;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TO_BASE64;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TO_CHAR;
+import static org.apache.calcite.sql.fun.SqlLibraryOperators.TO_HEX;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TRANSLATE3;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TRUNC;
 import static org.apache.calcite.sql.fun.SqlLibraryOperators.TRY_CAST;
@@ -426,6 +448,8 @@ public class RexImpTable {
       Expressions.constant(true);
   public static final ConstantExpression COMMA_EXPR =
       Expressions.constant(",");
+  public static final ConstantExpression COLON_EXPR =
+      Expressions.constant(":");
   public static final MemberExpression BOXED_FALSE_EXPR =
       Expressions.field(null, Boolean.class, "FALSE");
   public static final MemberExpression BOXED_TRUE_EXPR =
@@ -468,6 +492,10 @@ public class RexImpTable {
       defineMethod(INITCAP, BuiltInMethod.INITCAP.method, NullPolicy.STRICT);
       defineMethod(TO_BASE64, BuiltInMethod.TO_BASE64.method, NullPolicy.STRICT);
       defineMethod(FROM_BASE64, BuiltInMethod.FROM_BASE64.method, NullPolicy.STRICT);
+      defineMethod(TO_BASE32, BuiltInMethod.TO_BASE32.method, NullPolicy.STRICT);
+      defineMethod(FROM_BASE32, BuiltInMethod.FROM_BASE32.method, NullPolicy.STRICT);
+      defineMethod(TO_HEX, BuiltInMethod.TO_HEX.method, NullPolicy.STRICT);
+      defineMethod(FROM_HEX, BuiltInMethod.FROM_HEX.method, NullPolicy.STRICT);
       defineMethod(MD5, BuiltInMethod.MD5.method, NullPolicy.STRICT);
       defineMethod(SHA1, BuiltInMethod.SHA1.method, NullPolicy.STRICT);
       defineMethod(SHA256, BuiltInMethod.SHA256.method, NullPolicy.STRICT);
@@ -488,10 +516,21 @@ public class RexImpTable {
           NullPolicy.STRICT);
       defineMethod(OCTET_LENGTH, BuiltInMethod.OCTET_LENGTH.method,
           NullPolicy.STRICT);
+      defineMethod(BIT_LENGTH, BuiltInMethod.BIT_LENGTH.method,
+          NullPolicy.STRICT);
       map.put(CONCAT, new ConcatImplementor());
       defineMethod(CONCAT_FUNCTION, BuiltInMethod.MULTI_STRING_CONCAT.method,
           NullPolicy.STRICT);
-      defineMethod(CONCAT2, BuiltInMethod.STRING_CONCAT_WITH_NULL.method, NullPolicy.ALL);
+      defineMethod(CONCAT_FUNCTION_WITH_NULL,
+          BuiltInMethod.MULTI_STRING_CONCAT_WITH_NULL.method, NullPolicy.NONE);
+      defineMethod(CONCAT2, BuiltInMethod.STRING_CONCAT_WITH_NULL.method,
+          NullPolicy.ALL);
+      defineMethod(CONCAT_WS,
+          BuiltInMethod.MULTI_STRING_CONCAT_WITH_SEPARATOR.method,
+          NullPolicy.ARG0);
+      defineMethod(CONCAT_WS_MSSQL,
+          BuiltInMethod.MULTI_STRING_CONCAT_WITH_SEPARATOR.method,
+          NullPolicy.NONE);
       defineMethod(OVERLAY, BuiltInMethod.OVERLAY.method, NullPolicy.STRICT);
       defineMethod(POSITION, BuiltInMethod.POSITION.method, NullPolicy.STRICT);
       defineMethod(ASCII, BuiltInMethod.ASCII.method, NullPolicy.STRICT);
@@ -610,6 +649,9 @@ public class RexImpTable {
       map.put(TIMESTAMP_TRUNC, map.get(FLOOR));
       map.put(TIME_TRUNC, map.get(FLOOR));
       map.put(DATETIME_TRUNC, map.get(FLOOR));
+      // BigQuery FLOOR and CEIL should use same implementation as standard
+      map.put(CEIL_BIG_QUERY, map.get(CEIL));
+      map.put(FLOOR_BIG_QUERY, map.get(FLOOR));
 
       map.put(LAST_DAY,
           new LastDayImplementor("lastDay", BuiltInMethod.LAST_DAY));
@@ -694,21 +736,33 @@ public class RexImpTable {
       defineMethod(ELEMENT, BuiltInMethod.ELEMENT.method, NullPolicy.STRICT);
       defineMethod(STRUCT_ACCESS, BuiltInMethod.STRUCT_ACCESS.method, NullPolicy.ANY);
       defineMethod(MEMBER_OF, BuiltInMethod.MEMBER_OF.method, NullPolicy.NONE);
+      defineMethod(ARRAY_APPEND, BuiltInMethod.ARRAY_APPEND.method, NullPolicy.ARG0);
       defineMethod(ARRAY_COMPACT, BuiltInMethod.ARRAY_COMPACT.method, NullPolicy.STRICT);
       defineMethod(ARRAY_CONTAINS, BuiltInMethod.LIST_CONTAINS.method, NullPolicy.ANY);
       defineMethod(ARRAY_DISTINCT, BuiltInMethod.ARRAY_DISTINCT.method, NullPolicy.STRICT);
       defineMethod(ARRAY_EXCEPT, BuiltInMethod.ARRAY_EXCEPT.method, NullPolicy.ANY);
+      defineMethod(ARRAY_JOIN, "arrayToString", NullPolicy.STRICT);
       defineMethod(ARRAY_INTERSECT, BuiltInMethod.ARRAY_INTERSECT.method, NullPolicy.ANY);
       defineMethod(ARRAY_LENGTH, BuiltInMethod.COLLECTION_SIZE.method, NullPolicy.STRICT);
       defineMethod(ARRAY_MAX, BuiltInMethod.ARRAY_MAX.method, NullPolicy.STRICT);
       defineMethod(ARRAY_MIN, BuiltInMethod.ARRAY_MIN.method, NullPolicy.STRICT);
+      defineMethod(ARRAY_PREPEND, BuiltInMethod.ARRAY_PREPEND.method, NullPolicy.ARG0);
+      defineMethod(ARRAY_POSITION, BuiltInMethod.ARRAY_POSITION.method, NullPolicy.ANY);
+      defineMethod(ARRAY_REMOVE, BuiltInMethod.ARRAY_REMOVE.method, NullPolicy.ANY);
       defineMethod(ARRAY_REPEAT, BuiltInMethod.ARRAY_REPEAT.method, NullPolicy.NONE);
       defineMethod(ARRAY_REVERSE, BuiltInMethod.ARRAY_REVERSE.method, NullPolicy.STRICT);
       defineMethod(ARRAY_SIZE, BuiltInMethod.COLLECTION_SIZE.method, NullPolicy.STRICT);
+      defineMethod(ARRAY_TO_STRING, "arrayToString", NullPolicy.STRICT);
       defineMethod(ARRAY_UNION, BuiltInMethod.ARRAY_UNION.method, NullPolicy.ANY);
+      defineMethod(ARRAYS_OVERLAP, BuiltInMethod.ARRAYS_OVERLAP.method, NullPolicy.ANY);
+      defineMethod(ARRAYS_ZIP, BuiltInMethod.ARRAYS_ZIP.method, NullPolicy.ANY);
+      defineMethod(MAP_CONCAT, BuiltInMethod.MAP_CONCAT.method, NullPolicy.ANY);
       defineMethod(MAP_ENTRIES, BuiltInMethod.MAP_ENTRIES.method, NullPolicy.STRICT);
       defineMethod(MAP_KEYS, BuiltInMethod.MAP_KEYS.method, NullPolicy.STRICT);
       defineMethod(MAP_VALUES, BuiltInMethod.MAP_VALUES.method, NullPolicy.STRICT);
+      defineMethod(MAP_FROM_ARRAYS, BuiltInMethod.MAP_FROM_ARRAYS.method, NullPolicy.ANY);
+      defineMethod(MAP_FROM_ENTRIES, BuiltInMethod.MAP_FROM_ENTRIES.method, NullPolicy.STRICT);
+      map.put(STR_TO_MAP, new StringToMapImplementor());
       map.put(ARRAY_CONCAT, new ArrayConcatImplementor());
       map.put(SORT_ARRAY, new SortArrayImplementor());
       final MethodImplementor isEmptyImplementor =
@@ -1363,7 +1417,7 @@ public class RexImpTable {
       final Primitive p = Primitive.of(compType);
       final boolean isMin = info.aggregation().kind == SqlKind.ARG_MIN;
       final Object inf = p == null ? null : (isMin ? p.max : p.min);
-      //acc[1] = isMin ? {max value} : {min value};
+      // acc[1] = isMin ? {max value} : {min value};
       reset.currentBlock().add(
           Expressions.statement(
               Expressions.assign(reset.accumulator().get(1),
@@ -2392,16 +2446,24 @@ public class RexImpTable {
         case MONTH:
         case WEEK:
         case DAY:
+        case DECADE:
+        case CENTURY:
+        case MILLENNIUM:
           final Expression dayOperand0 =
               preFloor ? call(operand0, type, TimeUnit.DAY) : operand0;
           return Expressions.call(floorMethod,
               translator.getLiteral(operand1), dayOperand0);
         default:
+          if (call.op.getKind() == SqlKind.DATE_TRUNC) {
+            throw new IllegalArgumentException("Time unit " + timeUnitRange
+                + " not supported for " + call.op.getName());
+          }
           return call(operand0, type, timeUnitRange.startUnit);
         }
 
       default:
-        throw new AssertionError();
+        throw new AssertionError(call.op.getName()
+            + " only supported with 1 or 2 arguments");
       }
     }
 
@@ -2798,9 +2860,9 @@ public class RexImpTable {
       final Expression argValue = argValueList.get(0);
 
       final Expression e;
-      //Special case for implementing unary minus with BigDecimal type
-      //for other data type(except BigDecimal) '-' operator is OK, but for
-      //BigDecimal, we should call negate method of BigDecimal
+      // Special case for implementing unary minus with BigDecimal type
+      // for other data type(except BigDecimal) '-' operator is OK, but for
+      // BigDecimal, we should call negate method of BigDecimal
       if (expressionType == ExpressionType.Negate && argValue.type == BigDecimal.class
           && null != backupMethodName) {
         e = Expressions.call(argValue, backupMethodName);
@@ -3123,6 +3185,37 @@ public class RexImpTable {
                         BuiltInMethod.COLLECTION_ADDALL.method, expression))));
       }
       return list;
+    }
+  }
+
+  /** Implementor for str_to_map. */
+  private static class StringToMapImplementor extends AbstractRexCallImplementor {
+    StringToMapImplementor() {
+      super("str_to_map", NullPolicy.STRICT, false);
+    }
+
+    @Override Expression implementSafe(RexToLixTranslator translator,
+        RexCall call, List<Expression> argValueList) {
+      switch (call.getOperands().size()) {
+      case 1:
+        return Expressions.call(
+            BuiltInMethod.STR_TO_MAP.method,
+            argValueList.get(0),
+            COMMA_EXPR,
+            COLON_EXPR);
+      case 2:
+        return Expressions.call(
+            BuiltInMethod.STR_TO_MAP.method,
+            argValueList.get(0),
+            argValueList.get(1),
+            COLON_EXPR);
+      case 3:
+        return Expressions.call(
+            BuiltInMethod.STR_TO_MAP.method,
+            argValueList);
+      default:
+        throw new AssertionError();
+      }
     }
   }
 

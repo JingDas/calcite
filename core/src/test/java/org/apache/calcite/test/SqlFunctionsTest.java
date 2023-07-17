@@ -40,8 +40,12 @@ import static org.apache.calcite.avatica.util.DateTimeUtils.MILLIS_PER_DAY;
 import static org.apache.calcite.avatica.util.DateTimeUtils.dateStringToUnixDate;
 import static org.apache.calcite.avatica.util.DateTimeUtils.timeStringToUnixDate;
 import static org.apache.calcite.avatica.util.DateTimeUtils.timestampStringToUnixDate;
+import static org.apache.calcite.runtime.SqlFunctions.arraysOverlap;
 import static org.apache.calcite.runtime.SqlFunctions.charLength;
 import static org.apache.calcite.runtime.SqlFunctions.concat;
+import static org.apache.calcite.runtime.SqlFunctions.concatMulti;
+import static org.apache.calcite.runtime.SqlFunctions.concatMultiWithNull;
+import static org.apache.calcite.runtime.SqlFunctions.concatMultiWithSeparator;
 import static org.apache.calcite.runtime.SqlFunctions.concatWithNull;
 import static org.apache.calcite.runtime.SqlFunctions.fromBase64;
 import static org.apache.calcite.runtime.SqlFunctions.greater;
@@ -96,6 +100,35 @@ class SqlFunctionsTest {
     return ImmutableList.of();
   }
 
+  @Test void testArraysOverlap() {
+    final List<Object> listWithOnlyNull = new ArrayList<>();
+    listWithOnlyNull.add(null);
+
+    // list2 is empty
+    assertThat(arraysOverlap(list(), list()), is(false));
+    assertThat(arraysOverlap(listWithOnlyNull, list()), is(false));
+    assertThat(arraysOverlap(list(1, null), list()), is(false));
+    assertThat(arraysOverlap(list(1, 2), list()), is(false));
+
+    // list2 contains only nulls
+    assertThat(arraysOverlap(list(), listWithOnlyNull), is(false));
+    assertThat(arraysOverlap(listWithOnlyNull, listWithOnlyNull), is(nullValue()));
+    assertThat(arraysOverlap(list(1, null), listWithOnlyNull), is(nullValue()));
+    assertThat(arraysOverlap(list(1, 2), listWithOnlyNull), is(nullValue()));
+
+    // list2 contains a mixture of nulls and non-nulls
+    assertThat(arraysOverlap(list(), list(1, null)), is(false));
+    assertThat(arraysOverlap(listWithOnlyNull, list(1, null)), is(nullValue()));
+    assertThat(arraysOverlap(list(1, null), list(1, null)), is(true));
+    assertThat(arraysOverlap(list(1, 2), list(1, null)), is(true));
+
+    // list2 contains only non-null
+    assertThat(arraysOverlap(list(), list(1, 2)), is(false));
+    assertThat(arraysOverlap(listWithOnlyNull, list(1, 2)), is(nullValue()));
+    assertThat(arraysOverlap(list(1, null), list(1, 2)), is(true));
+    assertThat(arraysOverlap(list(1, 2), list(1, 2)), is(true));
+  }
+
   @Test void testCharLength() {
     assertThat(charLength("xyz"), is(3));
   }
@@ -147,6 +180,38 @@ class SqlFunctionsTest {
     assertThat(concatWithNull("a", null), is("a"));
     assertThat(concatWithNull(null, null), is(nullValue()));
     assertThat(concatWithNull(null, "b"), is("b"));
+  }
+
+  @Test void testConcatMulti() {
+    assertThat(concatMulti("a b", "cd", "e"), is("a bcde"));
+    // The code generator will ensure that nulls are never passed in. If we
+    // pass in null, it is treated like the string "null", as the following
+    // tests show. Not the desired behavior for SQL.
+    assertThat(concatMulti((String) null), is("null"));
+    assertThat(concatMulti((String) null, null), is("nullnull"));
+    assertThat(concatMulti("a", null, "b"), is("anullb"));
+  }
+
+  @Test void testConcatMultiWithNull() {
+    assertThat(concatMultiWithNull("a b", "cd", "e"), is("a bcde"));
+    // Null value could be passed in which is treated as empty string
+    assertThat(concatMultiWithNull((String) null), is(""));
+    assertThat(concatMultiWithNull((String) null, ""), is(""));
+    assertThat(concatMultiWithNull((String) null, null, null), is(""));
+    assertThat(concatMultiWithNull("a", null, "b"), is("ab"));
+  }
+
+  @Test void testConcatMultiWithSeparator() {
+    assertThat(concatMultiWithSeparator(",", "a"), is("a"));
+    assertThat(concatMultiWithSeparator(",", "a b", "cd"), is("a b,cd"));
+    assertThat(concatMultiWithSeparator(",", "a b", null, "cd", null, "e"), is("a b,cd,e"));
+    assertThat(concatMultiWithSeparator(",", null, null), is(""));
+    assertThat(concatMultiWithSeparator(",", "", ""), is(","));
+    assertThat(concatMultiWithSeparator("", "a", "b", null, "c"), is("abc"));
+    assertThat(concatMultiWithSeparator("", null, null), is(""));
+    // The separator could be null, and it is treated as empty string
+    assertThat(concatMultiWithSeparator(null, "a", "b", null, "c"), is("abc"));
+    assertThat(concatMultiWithSeparator(null, null, null), is(""));
   }
 
   @Test void testPosixRegex() {

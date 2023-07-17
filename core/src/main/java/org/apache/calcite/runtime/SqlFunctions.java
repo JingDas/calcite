@@ -45,6 +45,9 @@ import org.apache.calcite.util.Util;
 import org.apache.calcite.util.format.FormatElement;
 import org.apache.calcite.util.format.FormatModels;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.language.Soundex;
 
@@ -92,6 +95,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -140,6 +144,8 @@ public class SqlFunctions {
   private static final int SOUNDEX_LENGTH = 4;
 
   private static final Pattern FROM_BASE64_REGEXP = Pattern.compile("[\\t\\n\\r\\s]");
+
+  private static final Base32 BASE_32 = new Base32();
 
   private static final Function1<List<Object>, Enumerable<Object>> LIST_AS_ENUMERABLE =
       a0 -> a0 == null ? Linq4j.emptyEnumerable() : Linq4j.asEnumerable(a0);
@@ -256,6 +262,40 @@ public class SqlFunctions {
     } catch (IllegalArgumentException e) {
       return null;
     }
+  }
+
+  /** SQL TO_BASE32(string) function. */
+  public static String toBase32(String string) {
+    return toBase32_(string.getBytes(UTF_8));
+  }
+
+  /** SQL TO_BASE32(string) function for binary string. */
+  public static String toBase32(ByteString string) {
+    return toBase32_(string.getBytes());
+  }
+
+  private static String toBase32_(byte[] bytes) {
+    return BASE_32.encodeToString(bytes);
+  }
+
+  /** SQL FROM_BASE32(string) function. */
+  public static ByteString fromBase32(String base32) {
+    return new ByteString(BASE_32.decode(base32));
+  }
+
+  /** SQL FROM_HEX(varchar) function. */
+  public static ByteString fromHex(String hex) {
+    try {
+      return new ByteString(Hex.decodeHex(hex));
+    } catch (DecoderException e) {
+      throw new IllegalArgumentException(
+          String.format(Locale.ROOT, "Failed to decode hex string: %s", hex), e);
+    }
+  }
+
+  /** SQL TO_HEX(binary) function. */
+  public static String toHex(ByteString byteString) {
+    return Hex.encodeHexString(byteString.getBytes());
   }
 
   /** SQL MD5(string) function. */
@@ -554,16 +594,18 @@ public class SqlFunctions {
   /** SQL SUBSTRING(string FROM ... FOR ...) function. */
   public static String substring(String c, int s, int l) {
     int lc = c.length();
-    int e = s + l;
+    long e = (long) s + (long) l;
     if (l < 0) {
       throw RESOURCE.illegalNegativeSubstringLength().ex();
     }
-    if (s > lc || e < 1) {
+    // Prevent overflow in addition
+    if (s > lc || e < 1L) {
       return "";
     }
     final int s0 = Math.max(s - 1, 0);
-    final int e0 = Math.min(e - 1, lc);
-    return c.substring(s0, e0);
+    final long e0 = Math.min(e - 1, (long) lc);
+    // We know that e0 cannot exceed Integer.MAX_VALUE, since it's smaller than lc
+    return c.substring(s0, (int) e0);
   }
 
   /** SQL SUBSTRING(binary FROM ...) function for binary. */
@@ -763,6 +805,16 @@ public class SqlFunctions {
     return s.length();
   }
 
+  /** SQL BIT_LENGTH(string) function. */
+  public static int bitLength(String s) {
+    return s.getBytes(UTF_8).length * 8;
+  }
+
+  /** SQL BIT_LENGTH(binary) function. */
+  public static int bitLength(ByteString s) {
+    return s.length() * 8;
+  }
+
   /** SQL {@code string || string} operator. */
   public static String concat(String s0, String s1) {
     return s0 + s1;
@@ -790,6 +842,35 @@ public class SqlFunctions {
   /** SQL {@code CONCAT(arg0, arg1, arg2, ...)} function. */
   public static String concatMulti(String... args) {
     return String.join("", args);
+  }
+
+  /** SQL {@code CONCAT(arg0, ...)} function which can accept null
+   * but never return null. Always treats null as empty string. */
+  public static String concatMultiWithNull(String... args) {
+    StringBuilder sb = new StringBuilder();
+    for (String arg : args) {
+      sb.append(arg == null ? "" : arg);
+    }
+    return sb.toString();
+  }
+
+  /** SQL {@code CONCAT_WS(sep, arg1, arg2, ...)} function;
+   * treats null arguments as empty strings. */
+  public static String concatMultiWithSeparator(String... args) {
+    // the separator arg could be null
+    final String sep = args[0] == null ? "" : args[0];
+    StringBuilder sb = new StringBuilder();
+    for (int i = 1; i < args.length; i++) {
+      if (args[i] != null) {
+        if (i < args.length - 1) {
+          sb.append(args[i]).append(sep);
+        } else {
+          // no separator after the last arg
+          sb.append(args[i]);
+        }
+      }
+    }
+    return sb.toString();
   }
 
   /** SQL {@code CONVERT(s, src_charset, dest_charset)} function. */
@@ -3883,6 +3964,56 @@ public class SqlFunctions {
     return atomic;
   }
 
+  /** Support the ARRAYS_OVERLAP function. */
+  public static @Nullable Boolean arraysOverlap(List list1, List list2) {
+    if (list1.size() > list2.size()) {
+      return arraysOverlap(list2, list1);
+    }
+    final List smaller = list1;
+    final List bigger = list2;
+    boolean hasNull = false;
+    if (smaller.size() > 0 && bigger.size() > 0) {
+      final Set smallestSet = new HashSet(smaller);
+      hasNull = smallestSet.remove(null);
+      for (Object element : bigger) {
+        if (element == null) {
+          hasNull = true;
+        } else if (smallestSet.contains(element)) {
+          return true;
+        }
+      }
+    }
+    if (hasNull) {
+      return null;
+    } else {
+      return false;
+    }
+  }
+
+  /** Support the ARRAYS_ZIP function. */
+  @SuppressWarnings("argument.type.incompatible")
+  public static List arraysZip(List... lists) {
+    final int biggestCardinality = lists.length == 0
+        ? 0
+        : Arrays.stream(lists).mapToInt(List::size).max().getAsInt();
+
+    final List result = new ArrayList(biggestCardinality);
+    for (int i = 0; i < biggestCardinality; i++) {
+      List<Object> row = new ArrayList<>();
+      Object value;
+      for (List list : lists) {
+        if (i < list.size() && list.get(i) != null) {
+          value = list.get(i);
+        } else {
+          value = null;
+        }
+        row.add(value);
+      }
+      result.add(row);
+    }
+    return result;
+  }
+
   /** Support the ARRAY_COMPACT function. */
   public static List compact(List list) {
     final List result = new ArrayList();
@@ -3891,6 +4022,14 @@ public class SqlFunctions {
         result.add(element);
       }
     }
+    return result;
+  }
+
+  /** Support the ARRAY_APPEND function. */
+  public static List arrayAppend(List list, Object element) {
+    final List result = new ArrayList(list.size() + 1);
+    result.addAll(list);
+    result.add(element);
     return result;
   }
 
@@ -3929,6 +4068,34 @@ public class SqlFunctions {
       }
     }
     return min;
+  }
+
+  /** Support the ARRAY_PREPEND function. */
+  public static List arrayPrepend(List list, Object element) {
+    final List result = new ArrayList(list.size() + 1);
+    result.add(element);
+    result.addAll(list);
+    return result;
+  }
+
+  /** Support the ARRAY_POSITION function. */
+  public static Long arrayPosition(List list, Object element) {
+    final int index = list.indexOf(element);
+    if (index != -1) {
+      return Long.valueOf(index + 1L);
+    }
+    return 0L;
+  }
+
+  /** Support the ARRAY_REMOVE function. */
+  public static List arrayRemove(List list, Object element) {
+    final List result = new ArrayList();
+    for (Object obj : list) {
+      if (obj == null || !obj.equals(element)) {
+        result.add(obj);
+      }
+    }
+    return result;
   }
 
   /** Support the ARRAY_REPEAT function. */
@@ -3974,6 +4141,13 @@ public class SqlFunctions {
     return list;
   }
 
+  /** Support the MAP_CONCAT function. */
+  public static Map mapConcat(Map... maps) {
+    final Map result = new LinkedHashMap();
+    Arrays.stream(maps).forEach(result::putAll);
+    return result;
+  }
+
   /** Support the MAP_ENTRIES function. */
   public static List mapEntries(Map<Object, Object> map) {
     final List result = new ArrayList(map.size());
@@ -3991,6 +4165,45 @@ public class SqlFunctions {
   /** Support the MAP_VALUES function. */
   public static List mapValues(Map map) {
     return new ArrayList<>(map.values());
+  }
+
+  /** Support the MAP_FROM_ARRAYS function. */
+  public static Map mapFromArrays(List keysArray, List valuesArray) {
+    if (keysArray.size() != valuesArray.size()) {
+      throw RESOURCE.illegalArgumentsInMapFromArraysFunc(keysArray.size(), valuesArray.size()).ex();
+    }
+    final Map map = new LinkedHashMap<>();
+    for (int i = 0; i < keysArray.size(); i++) {
+      map.put(keysArray.get(i), valuesArray.get(i));
+    }
+    return map;
+  }
+
+  /** Support the MAP_FROM_ENTRIES function. */
+  public static @Nullable Map mapFromEntries(List entries) {
+    final Map map = new LinkedHashMap<>();
+    for (Object entry: entries) {
+      if (entry == null) {
+        return null;
+      }
+      map.put(structAccess(entry, 0, null), structAccess(entry, 1, null));
+    }
+    return map;
+  }
+
+  /** Support the STR_TO_MAP function. */
+  public static Map strToMap(String string, String stringDelimiter, String keyValueDelimiter) {
+    final Map map = new LinkedHashMap();
+    final String[] keyValues = string.split(stringDelimiter, -1);
+    for (String s : keyValues) {
+      String[] keyValueArray = s.split(keyValueDelimiter, 2);
+      String key = keyValueArray[0];
+      String value = keyValueArray.length < 2
+          ? null
+          : keyValueArray[1];
+      map.put(key, value);
+    }
+    return map;
   }
 
   /** Support the SLICE function. */
@@ -4117,6 +4330,42 @@ public class SqlFunctions {
   public static List reverse(List list) {
     Collections.reverse(list);
     return list;
+  }
+
+  /** SQL {@code ARRAY_TO_STRING(array, delimiter)} function. */
+  public static String arrayToString(List list, String delimiter) {
+    return arrayToString(list, delimiter, null);
+  }
+
+  /** SQL {@code ARRAY_TO_STRING(array, delimiter, nullText)} function. */
+  public static String arrayToString(List list, String delimiter, @Nullable String nullText) {
+    StringBuilder sb = new StringBuilder();
+    boolean isFirst = true;
+    for (Object item : list) {
+      String str;
+      if (item == null) {
+        if (nullText == null) {
+          continue;
+        } else {
+          str = nullText;
+        }
+      } else if (item instanceof String) {
+        str = (String) item;
+      } else if (item instanceof ByteString) {
+        str = item.toString();
+      } else {
+        throw new IllegalStateException(
+            "arrayToString supports only String or ByteString, but got "
+                + item.getClass().getName());
+      }
+
+      if (!isFirst) {
+        sb.append(delimiter);
+      }
+      sb.append(str);
+      isFirst = false;
+    }
+    return sb.toString();
   }
 
   /**

@@ -751,7 +751,7 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
   }
 
   /** Tests the CONCAT function, which unlike the concat operator ('||') is not
-   * standard but only in the ORACLE and POSTGRESQL libraries. */
+   * standard but enabled in the ORACLE, MySQL, BigQuery, POSTGRESQL and MSSQL libraries. */
   @Test void testConcatFunction() {
     // CONCAT is not in the library operator table
     final SqlValidatorFixture s = fixture()
@@ -762,7 +762,7 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     s.withExpr("concat('aabbcc', 'ab', '+-')")
         .columnType("VARCHAR(10) NOT NULL");
     s.withExpr("concat('aabbcc', CAST(NULL AS VARCHAR(20)), '+-')")
-        .columnType("VARCHAR(28)");
+        .columnType("VARCHAR(28) NOT NULL");
     s.withExpr("concat('aabbcc', 2)")
         .withWhole(true)
         .withTypeCoercion(false)
@@ -1040,6 +1040,12 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
         .columnType("VARCHAR(1) NOT NULL");
     expr("substring('a', 1, '3')")
         .columnType("VARCHAR(1) NOT NULL");
+
+    // Correctly processed null string and params.
+    expr("SUBSTRING(NULL FROM 1 FOR 2)").ok();
+    expr("SUBSTRING('text' FROM 1 FOR NULL)").ok();
+    expr("SUBSTRING('text' FROM NULL FOR 2)").ok();
+    expr("SUBSTRING('text' FROM NULL)").ok();
   }
 
   @Test void testSubstringFails() {
@@ -3742,6 +3748,31 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     // Parser does not allow star dot identifier.
     sql("select *^.^foo from emp")
         .fails("(?s).*Encountered \".\" at .*");
+  }
+
+  @Test void testStarWithoutFromFails() {
+    final String selectStarRequiresAFromClause =
+        "SELECT \\* requires a FROM clause";
+    sql("select ^*^")
+        .fails(selectStarRequiresAFromClause);
+    sql("select * from (select 2 as two)")
+        .type("RecordType(INTEGER NOT NULL TWO) NOT NULL");
+    sql("select ^e^.*")
+        .fails("Unknown identifier 'E'");
+    sql("select ^*^, 2 as two")
+        .fails(selectStarRequiresAFromClause);
+    sql("select 2 as two, ^*^")
+        .fails(selectStarRequiresAFromClause);
+    sql("select 3 as three union select ^*^ union select 4 as four")
+        .fails(selectStarRequiresAFromClause);
+    sql("select sum(1) as someone, ^*^")
+        .fails(selectStarRequiresAFromClause);
+    sql("select c from (select ^*^) as t(c)")
+        .fails(selectStarRequiresAFromClause);
+    sql("select 2 as two\n"
+        + "from emp as e\n"
+        + "where exists (select e.*)")
+        .type("RecordType(INTEGER NOT NULL TWO) NOT NULL");
   }
 
   @Test void testAsColumnList() {
@@ -7649,6 +7680,18 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
         .fails("HAVING clause must be a condition");
     sql("select * from (values (1)) order by ^ramp(3)^ asc, 1 desc")
         .fails("Cannot call table function here: 'RAMP'");
+  }
+
+  /** Test case for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-5779">[CALCITE-5779]
+   * Implicit column alias for single-column table function should work</a>. */
+  @Test void testTableFunctionSingleColumnAlias() {
+    final SqlValidatorFixture s = fixture()
+        .withOperatorTable(MockSqlOperatorTable.standard().extend());
+    s.withSql("select rmp from table(ramp(3)) as rmp").ok();
+    s.withSql("select rmp.i from table(ramp(3)) as rmp").ok();
+    s.withSql("select rmp.i, rmp from table(ramp(3)) as rmp").ok();
+    s.withSql("select l from table(ramp(3)) as rmp(l)").ok();
   }
 
   /** Test case for

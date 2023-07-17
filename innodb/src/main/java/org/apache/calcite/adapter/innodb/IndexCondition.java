@@ -22,8 +22,6 @@ import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.Pair;
 
-import org.apache.commons.collections.CollectionUtils;
-
 import com.alibaba.innodb.java.reader.comparator.ComparisonOperator;
 import com.google.common.collect.ImmutableList;
 
@@ -97,7 +95,8 @@ public class IndexCondition {
         remainderConditions == null ? ImmutableList.of()
             : ImmutableList.copyOf(remainderConditions);
     this.queryType = queryType;
-    this.pointQueryKey = pointQueryKey;
+    this.pointQueryKey = pointQueryKey == null ? ImmutableList.of()
+            : ImmutableList.copyOf(pointQueryKey);
     this.rangeQueryLowerOp = Objects.requireNonNull(rangeQueryLowerOp, "rangeQueryLowerOp");
     this.rangeQueryUpperOp = Objects.requireNonNull(rangeQueryUpperOp, "rangeQueryUpperOp");
     this.rangeQueryLowerKey = ImmutableList.copyOf(rangeQueryLowerKey);
@@ -332,10 +331,10 @@ public class IndexCondition {
       checkState(pointQueryKey.size() == indexColumnNames.size());
       append(builder, indexColumnNames, pointQueryKey, "=");
     } else {
-      if (CollectionUtils.isNotEmpty(rangeQueryLowerKey)) {
+      if (!rangeQueryLowerKey.isEmpty()) {
         append(builder, indexColumnNames, rangeQueryLowerKey, rangeQueryLowerOp.value());
       }
-      if (CollectionUtils.isNotEmpty(rangeQueryUpperKey)) {
+      if (!rangeQueryUpperKey.isEmpty()) {
         append(builder, indexColumnNames, rangeQueryUpperKey, rangeQueryUpperOp.value());
       }
     }

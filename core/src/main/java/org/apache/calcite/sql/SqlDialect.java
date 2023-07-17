@@ -479,8 +479,8 @@ public class SqlDialect {
     writer.sep((SqlKind.PLUS == sqlKind) ? "+" : "-");
     call.operand(1).unparse(writer, leftPrec, rightPrec);
     writer.endList(frame);
-    //Only two parameters are present normally
-    //Checking parameter count to prevent errors
+    // Only two parameters are present normally.
+    // Checking parameter count to prevent errors.
     if (call.getOperandList().size() > 2) {
       call.operand(2).unparse(writer, leftPrec, rightPrec);
     }
@@ -853,7 +853,7 @@ public class SqlDialect {
   /** Rewrite SINGLE_VALUE into expression based on database variants
    * E.g. HSQLDB, MYSQL, ORACLE, etc.
    */
-  public SqlNode rewriteSingleValueExpr(SqlNode aggCall) {
+  public SqlNode rewriteSingleValueExpr(SqlNode aggCall, RelDataType relDataType) {
     LOGGER.debug("SINGLE_VALUE rewrite not supported for {}", databaseProduct);
     return aggCall;
   }

@@ -702,6 +702,9 @@ public interface CalciteResource {
   @BaseMessage("Map requires an even number of arguments")
   ExInst<SqlValidatorException> mapRequiresEvenArgCount();
 
+  @BaseMessage("Function ''{0}'' should all be of type map, but it is ''{1}''")
+  ExInst<SqlValidatorException> typesShouldAllBeMap(String funcName, String type);
+
   @BaseMessage("Incompatible types")
   ExInst<SqlValidatorException> incompatibleTypes();
 
@@ -773,6 +776,9 @@ public interface CalciteResource {
 
   @BaseMessage("SELECT must have a FROM clause")
   ExInst<SqlValidatorException> selectMissingFrom();
+
+  @BaseMessage("SELECT * requires a FROM clause")
+  ExInst<SqlValidatorException> selectStarRequiresFrom();
 
   @BaseMessage("Group function ''{0}'' can only appear in GROUP BY clause")
   ExInst<SqlValidatorException> groupFunctionMustAppearInGroupByClause(String funcName);
@@ -896,6 +902,9 @@ public interface CalciteResource {
 
   @BaseMessage("Substring error: negative substring length not allowed")
   ExInst<CalciteException> illegalNegativeSubstringLength();
+
+  @BaseMessage("Illegal arguments: The length of the keys array {0,number,#} is not equal to the length of the values array {1,number,#} in MAP_FROM_ARRAYS function")
+  ExInst<CalciteException> illegalArgumentsInMapFromArraysFunc(int arg0, int arg1);
 
   @BaseMessage("Trim error: trim character must be exactly 1 character")
   ExInst<CalciteException> trimError();

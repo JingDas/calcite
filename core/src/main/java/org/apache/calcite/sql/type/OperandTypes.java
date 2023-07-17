@@ -404,6 +404,13 @@ public abstract class OperandTypes {
           // Third operand optional (operand index 0, 1, 2)
           number -> number == 2);
 
+  public static final FamilyOperandTypeChecker STRING_OPTIONAL_STRING_OPTIONAL_STRING =
+      family(
+          ImmutableList.of(SqlTypeFamily.STRING, SqlTypeFamily.STRING,
+              SqlTypeFamily.STRING),
+          // Second and Third operand both are optional (operand index 0, 1, 2)
+          number -> number == 1 || number == 2);
+
   public static final FamilyOperandTypeChecker STRING_NUMERIC_OPTIONAL_STRING =
       family(
           ImmutableList.of(SqlTypeFamily.STRING, SqlTypeFamily.NUMERIC,
@@ -469,10 +476,40 @@ public abstract class OperandTypes {
   public static final SqlSingleOperandTypeChecker ARRAY =
       family(SqlTypeFamily.ARRAY);
 
+  public static final SqlSingleOperandTypeChecker ARRAY_ARRAY =
+      family(SqlTypeFamily.ARRAY, SqlTypeFamily.ARRAY);
+
   public static final SqlSingleOperandTypeChecker ARRAY_OR_MAP =
       OperandTypes.family(SqlTypeFamily.ARRAY)
           .or(OperandTypes.family(SqlTypeFamily.MAP))
           .or(OperandTypes.family(SqlTypeFamily.ANY));
+
+  public static final SqlOperandTypeChecker STRING_ARRAY_CHARACTER_OPTIONAL_CHARACTER =
+      new FamilyOperandTypeChecker(
+          ImmutableList.of(SqlTypeFamily.ARRAY, SqlTypeFamily.CHARACTER, SqlTypeFamily.CHARACTER),
+          i -> i == 2) {
+        @SuppressWarnings("argument.type.incompatible")
+        @Override public boolean checkOperandTypes(
+            SqlCallBinding callBinding,
+            boolean throwOnFailure) {
+          if (!super.checkOperandTypes(callBinding, throwOnFailure)) {
+            return false;
+          }
+          RelDataType elementType = callBinding.getOperandType(0).getComponentType();
+          if (elementType == null || !SqlTypeUtil.isString(elementType)) {
+            if (throwOnFailure) {
+              throw callBinding.newValidationSignatureError();
+            }
+            return false;
+          }
+          return true;
+        }
+
+        @Override public String getAllowedSignatures(SqlOperator op, String opName) {
+          return opName + "(<STRING ARRAY>, <CHARACTER>[, <CHARACTER>])";
+        }
+      };
+
 
   /** Checks that returns whether a value is a multiset or an array.
    * Cf Java, where list and set are collections but a map is not. */
@@ -489,6 +526,9 @@ public abstract class OperandTypes {
 
   public static final SqlOperandTypeChecker ARRAY_ELEMENT =
       new ArrayElementOperandTypeChecker();
+
+  public static final SqlSingleOperandTypeChecker MAP_FROM_ENTRIES =
+      new MapFromEntriesOperandTypeChecker();
 
   /**
    * Operand type-checking strategy where type must be a literal or NULL.
@@ -512,6 +552,7 @@ public abstract class OperandTypes {
             SqlCallBinding callBinding,
             SqlNode operand,
             int iFormalOperand,
+            SqlTypeFamily family,
             boolean throwOnFailure) {
           if (!LITERAL.checkSingleOperandType(
               callBinding,
@@ -525,6 +566,7 @@ public abstract class OperandTypes {
               callBinding,
               operand,
               iFormalOperand,
+              family,
               throwOnFailure)) {
             return false;
           }
@@ -556,14 +598,15 @@ public abstract class OperandTypes {
           i -> false) {
         @Override public boolean checkSingleOperandType(
             SqlCallBinding callBinding, SqlNode operand,
-            int iFormalOperand, boolean throwOnFailure) {
+            int iFormalOperand, SqlTypeFamily family,
+            boolean throwOnFailure) {
           if (iFormalOperand == 0) {
             return super.checkSingleOperandType(callBinding, operand,
-                iFormalOperand, throwOnFailure);
+                iFormalOperand, family, throwOnFailure);
           }
 
           return BOOLEAN_LITERAL.checkSingleOperandType(
-              callBinding, operand, 0, throwOnFailure);
+              callBinding, operand, iFormalOperand, throwOnFailure);
         }
       };
 
@@ -578,6 +621,7 @@ public abstract class OperandTypes {
             SqlCallBinding callBinding,
             SqlNode operand,
             int iFormalOperand,
+            SqlTypeFamily family,
             boolean throwOnFailure) {
           if (!LITERAL.checkSingleOperandType(
               callBinding,
@@ -591,6 +635,7 @@ public abstract class OperandTypes {
               callBinding,
               operand,
               iFormalOperand,
+              family,
               throwOnFailure)) {
             return false;
           }
@@ -633,14 +678,14 @@ public abstract class OperandTypes {
           i -> false) {
         @Override public boolean checkSingleOperandType(
             SqlCallBinding callBinding, SqlNode operand,
-            int iFormalOperand, boolean throwOnFailure) {
+            int iFormalOperand, SqlTypeFamily family, boolean throwOnFailure) {
           if (!LITERAL.checkSingleOperandType(callBinding, operand,
-              iFormalOperand, throwOnFailure)) {
+              0, throwOnFailure)) {
             return false;
           }
 
           if (!super.checkSingleOperandType(callBinding, operand,
-              iFormalOperand, throwOnFailure)) {
+              iFormalOperand, family, throwOnFailure)) {
             return false;
           }
 
@@ -671,14 +716,14 @@ public abstract class OperandTypes {
           i -> false) {
         @Override public boolean checkSingleOperandType(
             SqlCallBinding callBinding, SqlNode operand,
-            int iFormalOperand, boolean throwOnFailure) {
+            int iFormalOperand, SqlTypeFamily family, boolean throwOnFailure) {
           if (iFormalOperand == 0) {
             return super.checkSingleOperandType(callBinding, operand,
-                iFormalOperand, throwOnFailure);
+                iFormalOperand, family, throwOnFailure);
           }
 
           return UNIT_INTERVAL_NUMERIC_LITERAL.checkSingleOperandType(
-              callBinding, operand, 0, throwOnFailure);
+              callBinding, operand, iFormalOperand, throwOnFailure);
         }
       };
 
@@ -861,16 +906,14 @@ public abstract class OperandTypes {
       new FamilyOperandTypeChecker(ImmutableList.of(SqlTypeFamily.ANY),
           i -> false) {
         @Override public boolean checkSingleOperandType(
-            SqlCallBinding callBinding, SqlNode node,
-            int iFormalOperand, boolean throwOnFailure) {
-          if (!super.checkSingleOperandType(callBinding, node, iFormalOperand,
+            SqlCallBinding callBinding, SqlNode operand,
+            int iFormalOperand, SqlTypeFamily family, boolean throwOnFailure) {
+          if (!super.checkSingleOperandType(callBinding, operand, iFormalOperand, family,
               throwOnFailure)) {
             return false;
           }
-          // Scope is non-null at validate time, which is when we need to make
-          // this check.
-          final @Nullable SqlValidatorScope scope = callBinding.getScope();
-          if (scope != null && !scope.isMeasureRef(node)) {
+          final SqlValidatorScope scope = callBinding.getScope();
+          if (!scope.isMeasureRef(operand)) {
             if (throwOnFailure) {
               throw callBinding.newValidationError(
                   RESOURCE.argumentMustBeMeasure(
@@ -969,6 +1012,15 @@ public abstract class OperandTypes {
             SqlCallBinding callBinding,
             boolean throwOnFailure) {
           if (!super.checkOperandTypes(callBinding, throwOnFailure)) {
+            return false;
+          }
+          return SAME_SAME.checkOperandTypes(callBinding, throwOnFailure);
+        }
+
+        @Override public boolean checkOperandTypesWithoutTypeCoercion(
+            final SqlCallBinding callBinding,
+            final boolean throwOnFailure) {
+          if (!super.checkOperandTypesWithoutTypeCoercion(callBinding, throwOnFailure)) {
             return false;
           }
           return SAME_SAME.checkOperandTypes(callBinding, throwOnFailure);
@@ -1089,6 +1141,32 @@ public abstract class OperandTypes {
               ImmutableList.of("RECORDTYPE(SINGLE FIELD)"));
         }
       };
+
+  /** Checker that returns whether a value is a array of record type with two fields. */
+  private static class MapFromEntriesOperandTypeChecker
+      implements SqlSingleOperandTypeChecker {
+    @Override public boolean checkSingleOperandType(SqlCallBinding callBinding,
+        SqlNode node, int iFormalOperand, boolean throwOnFailure) {
+      assert 0 == iFormalOperand;
+      RelDataType type = SqlTypeUtil.deriveType(callBinding, node);
+      RelDataType componentType = requireNonNull(type.getComponentType(), "componentType");
+      boolean valid = false;
+      if (type.getSqlTypeName() == SqlTypeName.ARRAY
+          && componentType.getSqlTypeName() == SqlTypeName.ROW
+          && componentType.getFieldCount() == 2) {
+        valid = true;
+      }
+      if (!valid && throwOnFailure) {
+        throw callBinding.newValidationSignatureError();
+      }
+      return valid;
+    }
+
+    @Override public String getAllowedSignatures(SqlOperator op, String opName) {
+      return SqlUtil.getAliasedSignature(op, opName,
+          ImmutableList.of("ARRAY<RECORDTYPE(TWO FIELDS)>"));
+    }
+  }
 
   /** Operand type-checker that accepts period types. Examples:
    *

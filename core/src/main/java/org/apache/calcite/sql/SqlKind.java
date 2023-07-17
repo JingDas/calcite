@@ -424,6 +424,12 @@ public enum SqlKind {
   /** The two-argument {@code CONCAT} function (Oracle). */
   CONCAT2,
 
+  /** The {@code CONCAT} function (Postgresql and MSSQL) that ignores NULL. */
+  CONCAT_WITH_NULL,
+
+  /** The {@code CONCAT_WS} function (MSSQL). */
+  CONCAT_WS_MSSQL,
+
   /** The "IF" function (BigQuery, Hive, Spark). */
   IF,
 
@@ -432,6 +438,9 @@ public enum SqlKind {
 
   /** {@code DATE_DIFF} function (BigQuery Semantics). */
   DATE_ADD,
+
+  /** {@code DATE_TRUNC} function (BigQuery). */
+  DATE_TRUNC,
 
   /** {@code DATE_SUB} function (BigQuery). */
   DATE_SUB,
@@ -677,6 +686,9 @@ public enum SqlKind {
   /** {@code EXTRACT} function. */
   EXTRACT,
 
+  /** {@code ARRAY_APPEND} function (Spark semantics). */
+  ARRAY_APPEND,
+
   /** {@code ARRAY_COMPACT} function (Spark semantics). */
   ARRAY_COMPACT,
 
@@ -695,6 +707,9 @@ public enum SqlKind {
   /** {@code ARRAY_INTERSECT} function (Spark semantics). */
   ARRAY_INTERSECT,
 
+  /** {@code ARRAY_JOIN} function (Spark semantics). */
+  ARRAY_JOIN,
+
   /** {@code ARRAY_LENGTH} function (Spark semantics). */
   ARRAY_LENGTH,
 
@@ -703,6 +718,15 @@ public enum SqlKind {
 
   /** {@code ARRAY_MIN} function (Spark semantics). */
   ARRAY_MIN,
+
+  /** {@code ARRAY_POSITION} function (Spark semantics). */
+  ARRAY_POSITION,
+
+  /** {@code ARRAY_PREPEND} function (Spark semantics). */
+  ARRAY_PREPEND,
+
+  /** {@code ARRAY_REMOVE} function (Spark semantics). */
+  ARRAY_REMOVE,
 
   /** {@code ARRAY_REPEAT} function (Spark semantics). */
   ARRAY_REPEAT,
@@ -713,11 +737,23 @@ public enum SqlKind {
   /** {@code ARRAY_SIZE} function (Spark semantics). */
   ARRAY_SIZE,
 
+  /** {@code ARRAY_TO_STRING} function (BigQuery semantics). */
+  ARRAY_TO_STRING,
+
   /** {@code ARRAY_UNION} function (Spark semantics). */
   ARRAY_UNION,
 
+  /** {@code ARRAYS_OVERLAP} function (Spark semantics). */
+  ARRAYS_OVERLAP,
+
+  /** {@code ARRAYS_ZIP} function (Spark semantics). */
+  ARRAYS_ZIP,
+
   /** {@code SORT_ARRAY} function (Spark semantics). */
   SORT_ARRAY,
+
+  /** {@code MAP_CONCAT} function (Spark semantics). */
+  MAP_CONCAT,
 
   /** {@code MAP_ENTRIES} function (Spark semantics). */
   MAP_ENTRIES,
@@ -727,6 +763,15 @@ public enum SqlKind {
 
   /** {@code MAP_VALUES} function (Spark semantics). */
   MAP_VALUES,
+
+  /** {@code MAP_FROM_ARRAYS} function (Spark semantics). */
+  MAP_FROM_ARRAYS,
+
+  /** {@code MAP_FROM_ENTRIES} function (Spark semantics). */
+  MAP_FROM_ENTRIES,
+
+  /** {@code STR_TO_MAP} function (Spark semantics). */
+  STR_TO_MAP,
 
   /** {@code REVERSE} function (SQL Server, MySQL). */
   REVERSE,
@@ -1113,6 +1158,9 @@ public enum SqlKind {
   /** {@code DROP TABLE} DDL statement. */
   DROP_TABLE,
 
+  /** {@code TRUNCATE TABLE} DDL statement. */
+  TRUNCATE_TABLE,
+
   /** {@code CREATE VIEW} DDL statement. */
   CREATE_VIEW,
 
@@ -1224,7 +1272,7 @@ public enum SqlKind {
   public static final EnumSet<SqlKind> DDL =
       EnumSet.of(COMMIT, ROLLBACK, ALTER_SESSION,
           CREATE_SCHEMA, CREATE_FOREIGN_SCHEMA, DROP_SCHEMA,
-          CREATE_TABLE, ALTER_TABLE, DROP_TABLE,
+          CREATE_TABLE, ALTER_TABLE, DROP_TABLE, TRUNCATE_TABLE,
           CREATE_FUNCTION, DROP_FUNCTION,
           CREATE_VIEW, ALTER_VIEW, DROP_VIEW,
           CREATE_MATERIALIZED_VIEW, ALTER_MATERIALIZED_VIEW,
