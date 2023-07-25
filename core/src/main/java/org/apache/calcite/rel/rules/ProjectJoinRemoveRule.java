@@ -146,7 +146,6 @@ public class ProjectJoinRemoveRule
             ImmutableBitSet.of(joinKeys)))) {
       return;
     }
-
     RelNode node;
     if (isLeftSideReserved) {
       node =
